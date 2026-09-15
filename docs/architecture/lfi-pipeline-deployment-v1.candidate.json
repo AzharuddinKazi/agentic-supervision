@@ -128,7 +128,7 @@
   "boundaries": [
     {
       "kind": "region",
-      "label": "Primary deployment region (cloud-agnostic container platform)",
+      "label": "On-prem deployment region (container platform)",
       "wraps": [
         "ingress",
         "examiner_app",
@@ -209,8 +209,8 @@
       "dot": "cyan",
       "title": "Deployment decisions (ADR-0013/0014/0015)",
       "items": [
-        "Deployment target intentionally cloud-agnostic: on-prem VMs, on-prem K8s/OpenShift, or a government-approved cloud tenancy all satisfy this shape",
-        "LLM is self-hosted, in-tenant — no examination data leaves the enterprise boundary at inference time",
+        "Deployment target: on-prem for now (container platform) — revisit if that changes; the shape stays portable",
+        "LLM is self-hosted, in-tenant, model treated as a swappable black box — candidates already available on-prem: Qwen Coder, gpt-oss-120b",
         "Identity federates to CBUAE's existing SSO (OIDC/SAML) — no new user store"
       ]
     },
@@ -226,8 +226,8 @@
       "dot": "emerald",
       "title": "Not yet decided",
       "items": [
-        "Specific open-weight model and GPU sizing (pending real hardware capacity)",
-        "Specific cloud/on-prem platform (revisit ADR-0015 once chosen)",
+        "Which of the available on-prem models (Qwen Coder / gpt-oss-120b) to use, and GPU sizing — kept as a black box behind the inference service",
+        "Specific on-prem container platform (VMs vs. K8s/OpenShift) — revisit ADR-0015 once chosen",
         "Observability stack and CI/CD pipeline (not drawn) — no existing tooling named as mandatory reuse, designed fresh alongside this diagram"
       ]
     }
