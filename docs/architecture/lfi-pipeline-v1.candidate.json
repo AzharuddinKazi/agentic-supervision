@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "LFI Examination Pipeline — v1 Architecture",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "lfi_workspace", "type": "external", "label": "LFI Shared Workspace", "sublabel": "per-license-type folders", "pos": [20, 280], "size": [150, 64] },
+    { "id": "ingestion_adapter", "type": "backend", "label": "Ingestion Adapter", "sublabel": "list / fetch / mtime", "tag": "SFTP (v1)", "pos": [250, 280], "size": [160, 64] },
+    { "id": "intake_tracker", "type": "backend", "label": "Intake Tracker", "sublabel": "presence · format check", "pos": [490, 280], "size": [150, 64] },
+    { "id": "notice_corpus", "type": "database", "label": "Notice Corpus", "sublabel": "OCR + clause index", "pos": [670, 80], "size": [140, 64] },
+    { "id": "edm", "type": "external", "label": "EDM", "sublabel": "Oracle: fraud data", "pos": [840, 80], "size": [130, 64] },
+    { "id": "gap_analysis", "type": "backend", "label": "Gap Analysis Agent", "sublabel": "citation-grounded verdicts", "tag": "review if ungrounded", "pos": [670, 280], "size": [140, 64] },
+    { "id": "clarification_agent", "type": "backend", "label": "Clarification & Meeting", "sublabel": "questions + minutes → actions", "pos": [840, 280], "size": [160, 64] },
+    { "id": "findings_agent", "type": "backend", "label": "Findings & Reporting", "sublabel": "severity + letter + deck", "tag": "AG approval gate", "pos": [1030, 280], "size": [150, 64] },
+    { "id": "examiner_app", "type": "frontend", "label": "Examiner Dashboard", "sublabel": "Examiner + Lead/Approver roles", "pos": [670, 420], "size": [510, 72] },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only, per checkpoint", "pos": [890, 516], "size": [200, 64] }
+  ],
+  "boundaries": [
+    { "kind": "security-group", "label": "Enterprise sandboxed environment (private cloud / on-prem)", "wraps": ["ingestion_adapter", "notice_corpus", "intake_tracker", "gap_analysis", "clarification_agent", "findings_agent", "examiner_app", "audit_trail"], "pad": 16 },
+    { "kind": "region", "label": "LangGraph orchestration — interrupt/resume at sign-off checkpoints", "wraps": ["intake_tracker", "gap_analysis", "clarification_agent", "findings_agent"], "pad": 12 }
+  ],
+  "connections": [
+    { "id": "workspace-to-adapter", "from": "lfi_workspace", "to": "ingestion_adapter", "label": "SFTP", "variant": "emphasis" },
+    { "id": "adapter-to-intake", "from": "ingestion_adapter", "to": "intake_tracker", "label": "ingested documents", "labelDy": 56 },
+    { "id": "intake-to-gap", "from": "intake_tracker", "to": "gap_analysis", "label": "submitted docs", "labelDy": 56 },
+    { "id": "corpus-to-gap", "from": "notice_corpus", "to": "gap_analysis", "label": "clause citations", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "edm-to-gap", "from": "edm", "to": "gap_analysis", "label": "fraud-data context", "fromSide": "bottom" },
+    { "id": "gap-to-clarification", "from": "gap_analysis", "to": "clarification_agent", "label": "verdicts + gaps", "labelDy": 56 },
+    { "id": "clarification-to-findings", "from": "clarification_agent", "to": "findings_agent", "label": "meeting outcomes", "labelDy": 56 },
+    { "id": "clarification-to-app", "from": "clarification_agent", "to": "examiner_app", "label": "question list + minutes — sign-off", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "findings-to-app", "from": "findings_agent", "to": "examiner_app", "label": "findings + severity — sign-off", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "app-to-audit", "from": "examiner_app", "to": "audit_trail", "label": "sign-off log", "fromSide": "bottom", "toSide": "top", "labelDy": 12 }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "v1 scope", "items": ["Banks license type only", "All three examination phases, bare-minimum depth each", "Notice corpus includes a supersession graph; confidence-score cutoff routes complex cases to human review", "Notice versioning: current version only"] },
+    { "dot": "violet", "title": "Human-in-the-loop", "items": ["Question list, findings/severity, and pre-AG submission all require Lead/Approver sign-off", "Ungrounded compliance verdicts fall back to human review, never a guess", "Meeting outcomes that need further submissions loop back to Intake Tracker (not drawn — same shared workspace path)"] },
+    { "dot": "emerald", "title": "Deferred to v2", "items": ["Content/plausibility validation agent", "Unified cross-feature review queue", "Effective-dated notice versions", "SVF and other license types"] }
+  ]
+}

@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Local AI agent tooling (vendored skills, not part of this project's deliverable)
+.claude/skills/
+.agents/skills/
+
+# Working/scratch notes (distilled into CONTEXT.md and docs/adr/ before anything is dropped here)
+.scratch/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+*.swp
+*.swo
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Temp / build output
+*.tmp
+.cache/
