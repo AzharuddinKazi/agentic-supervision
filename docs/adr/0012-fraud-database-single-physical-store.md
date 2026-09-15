@@ -1,0 +1,5 @@
+# Notice corpus, audit trail, and analysis output share one physical database
+
+The architecture (and ADR-0005, ADR-0007) describe the notice corpus, the audit trail, and gap-analysis/findings-analysis output as distinct concerns. The current-state process documentation names a single **Fraud Database** that stores all AI-generated content and analysis, and separately replicates the source system's file/folder structure. We're adopting "Fraud Database" as one physical store housing all of these as logical sub-stores, rather than separate physical databases.
+
+This is worth recording because the architecture diagram draws these as separate boxes, which a future reader could mistake for separate physical services requiring their own provisioning/ops. The logical separation stays load-bearing — citation-grounding (ADR-0004) needs the notice corpus queryable per-clause, and the audit trail (ADR-0007) needs its append-only guarantee — but physically, one database is the right amount of infrastructure for v1's scale.
