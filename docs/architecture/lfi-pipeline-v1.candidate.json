@@ -3,9 +3,77 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "LFI Examination Pipeline — v1 Architecture",
-    "quality_profile": "showcase"
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "external": {
+          "label": "Human step / external system"
+        },
+        "frontend": {
+          "label": "Human-facing UI (software)"
+        },
+        "backend": {
+          "label": "LLM Agent — reasoning only"
+        },
+        "messagebus": {
+          "label": "LLM Agent + Tool Call"
+        },
+        "cloud": {
+          "label": "Deterministic tool / rule-based service"
+        },
+        "database": {
+          "label": "Data store"
+        }
+      }
+    }
   },
   "components": [
+    {
+      "id": "kickoff_comms",
+      "type": "external",
+      "label": "LFI Kickoff Comms",
+      "sublabel": "phone/email, virtual mtg",
+      "tag": "human, not modeled as state",
+      "pos": [
+        20,
+        60
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "onsite_meeting",
+      "type": "external",
+      "label": "In-Person Deep Dive",
+      "sublabel": "onsite exam meeting",
+      "tag": "human",
+      "pos": [
+        666,
+        60
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "ag_showcase",
+      "type": "external",
+      "label": "AG Showcase + Pre-Exit",
+      "sublabel": "human meetings, LFI + AG",
+      "tag": "human",
+      "pos": [
+        1014,
+        60
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
     {
       "id": "lfi_workspace",
       "type": "external",
@@ -13,7 +81,7 @@
       "sublabel": "delisted → Smart Portal",
       "pos": [
         20,
-        270
+        370
       ],
       "size": [
         140,
@@ -22,13 +90,13 @@
     },
     {
       "id": "ingestion_adapter",
-      "type": "backend",
+      "type": "cloud",
       "label": "Ingestion Adapter",
       "sublabel": "list / fetch / mtime",
       "tag": "SFTP (v1)",
       "pos": [
         184,
-        270
+        370
       ],
       "size": [
         140,
@@ -42,7 +110,7 @@
       "sublabel": "Excel: ID + clause",
       "pos": [
         348,
-        70
+        170
       ],
       "size": [
         140,
@@ -51,12 +119,13 @@
     },
     {
       "id": "intake_tracker",
-      "type": "backend",
+      "type": "cloud",
       "label": "Intake Tracker",
       "sublabel": "presence · format check",
+      "tag": "rule-based, not LLM",
       "pos": [
         348,
-        270
+        370
       ],
       "size": [
         140,
@@ -71,7 +140,7 @@
       "tag": "Fraud DB",
       "pos": [
         512,
-        70
+        170
       ],
       "size": [
         130,
@@ -85,7 +154,7 @@
       "sublabel": "Oracle fraud data",
       "pos": [
         670,
-        70
+        170
       ],
       "size": [
         120,
@@ -94,13 +163,13 @@
     },
     {
       "id": "gap_analysis",
-      "type": "backend",
+      "type": "messagebus",
       "label": "Gap Analysis Agent",
       "sublabel": "citation-grounded",
-      "tag": "review if ungrounded",
+      "tag": "LLM + tool calls",
       "pos": [
         512,
-        270
+        370
       ],
       "size": [
         130,
@@ -112,9 +181,10 @@
       "type": "backend",
       "label": "Clarification & Meeting",
       "sublabel": "questions + minutes → actions",
+      "tag": "LLM, no tool calls",
       "pos": [
         666,
-        270
+        370
       ],
       "size": [
         150,
@@ -123,12 +193,13 @@
     },
     {
       "id": "findings_reporting",
-      "type": "backend",
+      "type": "messagebus",
       "label": "Findings & Reporting",
       "sublabel": "qual + quant → letter + deck",
+      "tag": "LLM + tool calls",
       "pos": [
         840,
-        270
+        370
       ],
       "size": [
         150,
@@ -137,13 +208,13 @@
     },
     {
       "id": "ag_preexit",
-      "type": "backend",
+      "type": "cloud",
       "label": "AG & Pre-Exit",
-      "sublabel": "showcase → revise loop",
-      "tag": "routine, not rare",
+      "sublabel": "state tracker",
+      "tag": "+ guarded LLM assist",
       "pos": [
         1014,
-        270
+        370
       ],
       "size": [
         140,
@@ -157,7 +228,7 @@
       "sublabel": "Examiner + Lead/Approver roles",
       "pos": [
         666,
-        388
+        488
       ],
       "size": [
         488,
@@ -172,7 +243,7 @@
       "tag": "Fraud DB",
       "pos": [
         900,
-        470
+        570
       ],
       "size": [
         180,
@@ -200,8 +271,9 @@
     },
     {
       "kind": "region",
-      "label": "Phase 1: Pre-Examination",
+      "label": "Phase 1: Sending out the RFIs",
       "wraps": [
+        "kickoff_comms",
         "ingestion_adapter",
         "rfi_store",
         "notice_corpus",
@@ -212,8 +284,9 @@
     },
     {
       "kind": "region",
-      "label": "Phase 2: Examination (Onsite)",
+      "label": "Phase 2: Examination Phase (Onsite)",
       "wraps": [
+        "onsite_meeting",
         "clarification_agent",
         "findings_reporting"
       ],
@@ -221,14 +294,34 @@
     },
     {
       "kind": "region",
-      "label": "Phase 3: Pre-Exit",
+      "label": "Phase 3: Pre-Exit Phase",
       "wraps": [
+        "ag_showcase",
         "ag_preexit"
       ],
       "pad": 10
     }
   ],
   "connections": [
+    {
+      "id": "kickoff-to-workspace",
+      "from": "kickoff_comms",
+      "to": "lfi_workspace",
+      "label": "kicks off 30-day RFI window",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 40
+    },
+    {
+      "id": "agpreexit-to-showcase",
+      "from": "ag_preexit",
+      "to": "ag_showcase",
+      "label": "showcase, then pre-exit mtg",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
     {
       "id": "workspace-to-adapter",
       "from": "lfi_workspace",
@@ -295,11 +388,11 @@
       "via": [
         [
           730,
-          220
+          320
         ],
         [
           915,
-          220
+          320
         ]
       ]
     },
@@ -359,11 +452,12 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "v1 scope",
+      "title": "How to read the colors",
       "items": [
-        "Banks license type only; gap analysis runs as a batch once all RFI files are submitted",
-        "Notice Corpus + Audit Trail Store are one physical \"Fraud Database\"; logical separation kept for citation-grounding and audit guarantees",
-        "Further-submission documents from Phase 2 loop back into Phase 1's Intake Tracker (not drawn — same shared workspace path)"
+        "Grey/external = a human step (meeting, call, decision) or an outside system — not automated by this pipeline",
+        "Teal/backend = an LLM agent reasoning alone; peach/messagebus = an LLM agent that also calls tools",
+        "Gold/cloud = a deterministic tool or rule-based service — no LLM involved at all; violet/database = a data store",
+        "In-Person Deep Dive's minutes feed Clarification & Meeting's post-meeting extraction (edge not drawn — crosses the data-source row; see agent-specifications.md)"
       ]
     },
     {
