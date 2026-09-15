@@ -1,0 +1,37 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "LFI Pipeline — Phase 3 LangGraph Workflow (Post-Examination)",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "system", "label": "Findings & Reporting / AG & Pre-Exit" },
+    { "id": "human", "label": "Examiner Dashboard (Human)" },
+    { "id": "external", "label": "AG / LFI (Outside Pipeline)" }
+  ],
+  "phases": [
+    { "id": "draft", "label": "Draft findings", "fromCol": 0, "toCol": 1 },
+    { "id": "signoff", "label": "Sign-off", "fromCol": 2, "toCol": 2 },
+    { "id": "revise", "label": "Revision", "fromCol": 3, "toCol": 5, "variant": "security" }
+  ],
+  "mainPath": ["findings_trigger", "draft_findings", "findings_signoff", "ag_showcase", "preexit_meeting"],
+  "nodes": [
+    { "id": "findings_trigger", "lane": "system", "col": 0, "type": "external", "label": "Phase 2 Complete", "sublabel": "sufficiency confirmed", "width": 132 },
+    { "id": "draft_findings", "lane": "system", "col": 1, "type": "backend", "label": "Findings & Reporting", "sublabel": "qual + quant tracks", "tag": "Findings Author", "width": 132 },
+    { "id": "findings_signoff", "lane": "human", "col": 2, "type": "frontend", "label": "Findings Sign-off", "sublabel": "severity validated (ADR-0017)", "width": 132 },
+    { "id": "ag_showcase", "lane": "external", "col": 3, "type": "external", "label": "AG Showcase", "sublabel": "outside pipeline", "width": 132 },
+    { "id": "ag_feedback_review", "lane": "human", "col": 4, "type": "frontend", "label": "AG Feedback Review", "sublabel": "NEW — human-gated", "tag": "fixes ADR-0017 gap", "width": 132 },
+    { "id": "preexit_meeting", "lane": "external", "col": 5, "type": "external", "label": "Pre-Exit Meeting", "sublabel": "concerns? — see card", "width": 132 }
+  ],
+  "edges": [
+    { "id": "trigger-draft", "from": "findings_trigger", "to": "draft_findings", "variant": "default" },
+    { "id": "draft-signoff", "from": "draft_findings", "to": "findings_signoff", "label": "severity = rubric.lookup()", "variant": "emphasis" },
+    { "id": "signoff-showcase", "from": "findings_signoff", "to": "ag_showcase", "label": "Lead/Approver signs off", "variant": "default" },
+    { "id": "showcase-approved", "from": "ag_showcase", "to": "preexit_meeting", "label": "approved", "variant": "emphasis" },
+    { "id": "showcase-changes", "from": "ag_showcase", "to": "ag_feedback_review", "label": "changes requested", "variant": "security", "role": "branch" }
+  ],
+  "cards": [
+    { "dot": "rose", "title": "Fixes from Critical Finding #1 (ADR-0017)", "items": ["AG feedback surfaces here first, with its own interrupt() — never passed straight to Findings & Reporting as a redraft trigger; redraft loop not drawn", "Persisted severity must equal rubric.lookup()'s return value, enforced in code", "Pre-exit concerns → exit deck, loops back; no concerns → exit meeting (terminal)"] }
+  ]
+}

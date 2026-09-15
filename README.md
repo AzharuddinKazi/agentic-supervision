@@ -24,9 +24,11 @@ CLAUDE.md                      Project instructions for AI coding agents working
 - **`CONTEXT.md`** — read this first. It defines every domain term (LFI, RFI, notice/clause, supersession, EDM, finding, transmittal letter, etc.) as used in this project.
 - **`docs/adr/`** — read the ADRs relevant to the area you're touching before making architectural changes. Each one records a decision, its rationale, and what alternative was rejected and why.
 - **`docs/architecture/lfi-pipeline-v1.html`** — the v1 logical architecture diagram, phase-segregated (Pre-Examination / Examination Onsite / Pre-Exit).
-- **`docs/architecture/agent-specifications.md`** — per-agent contract: trigger, inputs, outputs, tools, model behavior rules, shared state, human checkpoints. Read this before implementing any agent.
-- **`docs/architecture/lfi-pipeline-deployment-v1.html`** — the v1 deployment architecture (infra ownership, network zones, data placement).
-- **`.scratch/lfi-examination-pipeline/design-grill.md`** — the full decision log (47 decisions across 9 rounds) behind `CONTEXT.md` and the ADRs. Useful for "why did we land here" archaeology; `CONTEXT.md`/ADRs are the distilled, current reference.
+- **`docs/architecture/lfi-pipeline-deployment-v1.html`** — the v1 deployment architecture (all 5 agents individually shown with persona/tools, infra ownership, network zones, observability/eval stack).
+- **`docs/architecture/lfi-workflow-phase{1,2,3}-*.html`** — the actual LangGraph node/edge/conditional-transition diagrams, one per phase (component diagrams show *what exists*; these show *how it actually runs*, including every guardrail branch, human checkpoint, and the Phase 2 sufficiency-check gate).
+- **`docs/architecture/agent-specifications.md`** — per-agent contract: trigger, inputs, outputs, tools, model behavior rules (including the failure/retry/idempotency policy, ADR-0018), shared state, human checkpoints with SLAs. Read this before implementing any agent.
+- **`.scratch/architecture-review-2026-09-15.md`** — an independent staff-engineer-level production-readiness review; several Critical findings from it are already fixed (ADR-0017, ADR-0018, the three workflow diagrams) — read it for what's still open (High/Medium findings not yet actioned).
+- **`.scratch/lfi-examination-pipeline/design-grill.md`** — the full decision log (54+ decisions across 11+ rounds) behind `CONTEXT.md` and the ADRs. Useful for "why did we land here" archaeology; `CONTEXT.md`/ADRs are the distilled, current reference.
 
 ## Status
 
@@ -36,13 +38,13 @@ No build/implementation work has started. The next step is turning the settled d
 
 ## Regenerating a diagram
 
-Both diagrams are built with the vendored `archify` skill:
+All diagrams are built with the vendored `archify` skill. Architecture diagrams (`lfi-pipeline-v1`, `lfi-pipeline-deployment-v1`) use `diagram_type: "architecture"`; the LangGraph diagrams (`lfi-workflow-phase*`) use `diagram_type: "workflow"`:
 
 ```bash
 cd .claude/skills/archify
 npm install
-node bin/archify.mjs validate architecture <path-to-candidate.json> --quality showcase --json
-node bin/archify.mjs deliver  architecture <path-to-candidate.json> <path-to-output.html> --quality showcase --json
+node bin/archify.mjs validate <architecture|workflow> <path-to-candidate.json> --quality showcase --json
+node bin/archify.mjs deliver   <architecture|workflow> <path-to-candidate.json> <path-to-output.html> --quality showcase --json
 ```
 
 Edit the relevant `docs/architecture/*.candidate.json` and re-run `deliver` to update the diagram. The deployment diagram additionally sets `meta.engineering_profile: "deployment-ownership"`, which enforces real deployment hygiene at validation time: every non-external component needs an owning team (`tag`) and exactly one region assignment, and every stateful component needs a private security-group boundary.

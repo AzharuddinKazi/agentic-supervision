@@ -1,0 +1,42 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "LFI Pipeline — Phase 2 LangGraph Workflow (Examination Meeting)",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "system", "label": "Clarification & Meeting Agent" },
+    { "id": "human", "label": "Examiner Dashboard (Human)" },
+    { "id": "exception", "label": "Loop State", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "meet", "label": "Meeting", "fromCol": 0, "toCol": 1 },
+    { "id": "extract", "label": "Extract", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "gate", "label": "Sufficiency gate (new — Critical Finding #3)", "fromCol": 4, "toCol": 5, "variant": "security" }
+  ],
+  "mainPath": ["phase1_done", "meeting", "minutes_submitted", "extract", "requests", "sufficiency", "findings_ready"],
+  "nodes": [
+    { "id": "phase1_done", "lane": "system", "col": 0, "type": "external", "label": "Phase 1 Complete", "sublabel": "Qs finalized", "width": 132 },
+    { "id": "meeting", "lane": "system", "col": 1, "type": "external", "label": "Live Exam Meeting", "sublabel": "clarification Q&A", "width": 132 },
+    { "id": "minutes_submitted", "lane": "human", "col": 2, "type": "frontend", "label": "Minutes Submitted", "sublabel": "human-typed text", "width": 132 },
+    { "id": "extract", "lane": "system", "col": 2, "type": "backend", "label": "Extract Action Items", "sublabel": "no tool calls", "tag": "Meeting Facilitator", "width": 132 },
+    { "id": "requests", "lane": "system", "col": 3, "type": "backend", "label": "Further Submissions", "sublabel": "requests[] drafted", "width": 132 },
+    { "id": "sufficiency", "lane": "human", "col": 4, "type": "frontend", "label": "Sufficiency Check", "sublabel": "Lead/Approver judges", "tag": "human-judged, not LLM", "width": 132 },
+    { "id": "insufficient", "lane": "exception", "col": 5, "type": "security", "label": "Insufficient", "sublabel": "→ back to Phase 1 intake", "width": 132 },
+    { "id": "findings_ready", "lane": "system", "col": 5, "type": "backend", "label": "Proceed to Findings", "sublabel": "→ Phase 3", "width": 132 }
+  ],
+  "edges": [
+    { "id": "done-meeting", "from": "phase1_done", "to": "meeting", "variant": "default" },
+    { "id": "meeting-minutes", "from": "meeting", "to": "minutes_submitted", "variant": "default" },
+    { "id": "minutes-extract", "from": "minutes_submitted", "to": "extract", "variant": "default" },
+    { "id": "extract-requests", "from": "extract", "to": "requests", "variant": "default" },
+    { "id": "requests-sufficiency", "from": "requests", "to": "sufficiency", "label": "further submissions received", "variant": "default" },
+    { "id": "sufficiency-insufficient", "from": "sufficiency", "to": "insufficient", "label": "still insufficient", "variant": "security", "role": "branch" },
+    { "id": "sufficiency-ready", "from": "sufficiency", "to": "findings_ready", "label": "sufficient", "variant": "emphasis" }
+  ],
+  "cards": [
+    { "dot": "amber", "title": "New: sufficiency-check gate (fixes Critical Finding #3)", "items": ["current_state.png's Phase 2 shows an iterative sufficiency loop earlier drafts left unmodeled — this gate makes it a real, human-judged state, not an assumed one-shot extraction", "\"Insufficient\" re-enters Phase 1's Intake Tracker via the same all_submitted trigger (no literal loop-back edge drawn, to avoid clutter)"] },
+    { "dot": "cyan", "title": "Guardrail", "items": ["Sufficiency Check is explicitly human-judged (ADR-0003 augmentation principle) — no LLM auto-resolution of \"resolved\", since that was previously undefined"] }
+  ]
+}

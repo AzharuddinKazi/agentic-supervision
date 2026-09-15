@@ -1,0 +1,202 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "LFI Pipeline — Phase 1 LangGraph Workflow (Pre-Examination)",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "system",
+      "label": "Gap Analysis Agent (LangGraph)"
+    },
+    {
+      "id": "exception",
+      "label": "Guardrail State",
+      "variant": "exception"
+    },
+    {
+      "id": "human",
+      "label": "Examiner Dashboard (Human)"
+    }
+  ],
+  "phases": [
+    {
+      "id": "trigger",
+      "label": "Trigger",
+      "fromCol": 0,
+      "toCol": 0
+    },
+    {
+      "id": "retrieve",
+      "label": "Retrieve + ground",
+      "fromCol": 1,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "draft",
+      "label": "Draft output",
+      "fromCol": 3,
+      "toCol": 3
+    },
+    {
+      "id": "resolve",
+      "label": "Human resolution",
+      "fromCol": 4,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "groups": [
+    {
+      "id": "guardrail",
+      "label": "Citation-grounding guardrail (ADR-0004 / ADR-0017)",
+      "lane": "exception",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "security"
+    }
+  ],
+  "mainPath": [
+    "all_submitted",
+    "gap_analysis",
+    "verdict",
+    "supervision_qs",
+    "examiner_review",
+    "qs_finalized"
+  ],
+  "nodes": [
+    {
+      "id": "all_submitted",
+      "lane": "system",
+      "col": 0,
+      "type": "external",
+      "label": "All Submitted",
+      "sublabel": "trigger",
+      "width": 132
+    },
+    {
+      "id": "gap_analysis",
+      "lane": "system",
+      "col": 1,
+      "type": "backend",
+      "label": "Gap Analysis Agent",
+      "sublabel": "per-clause ReAct loop",
+      "tag": "auto-retries tool timeouts",
+      "width": 132
+    },
+    {
+      "id": "verdict",
+      "lane": "system",
+      "col": 3,
+      "type": "backend",
+      "label": "Draft Verdict",
+      "sublabel": "compliant / non-compliant",
+      "width": 132
+    },
+    {
+      "id": "supervision_qs",
+      "lane": "system",
+      "col": 4,
+      "type": "backend",
+      "label": "Draft Supervision Qs",
+      "sublabel": "+ gaps/strengths",
+      "width": 132
+    },
+    {
+      "id": "human_review_flags",
+      "lane": "exception",
+      "col": 2,
+      "type": "security",
+      "label": "Human Review Flags",
+      "sublabel": "ungrounded / low-conf.",
+      "tag": "ADR-0004",
+      "width": 132
+    },
+    {
+      "id": "examiner_review",
+      "lane": "human",
+      "col": 4,
+      "type": "frontend",
+      "label": "Examiner Dashboard",
+      "sublabel": "resolve flags",
+      "width": 132
+    },
+    {
+      "id": "qs_finalized",
+      "lane": "human",
+      "col": 5,
+      "type": "backend",
+      "label": "Supervision Qs Ready",
+      "sublabel": "→ Phase 2",
+      "width": 132
+    }
+  ],
+  "edges": [
+    {
+      "id": "trigger-gap",
+      "from": "all_submitted",
+      "to": "gap_analysis",
+      "variant": "default"
+    },
+    {
+      "id": "gap-verdict",
+      "from": "gap_analysis",
+      "to": "verdict",
+      "label": "grounded citation found",
+      "variant": "emphasis"
+    },
+    {
+      "id": "gap-ungrounded",
+      "from": "gap_analysis",
+      "to": "human_review_flags",
+      "label": "no citation, or supersession < threshold",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "flags-review",
+      "from": "human_review_flags",
+      "to": "examiner_review",
+      "variant": "default"
+    },
+    {
+      "id": "verdict-qs",
+      "from": "verdict",
+      "to": "supervision_qs",
+      "variant": "default"
+    },
+    {
+      "id": "qs-review",
+      "from": "supervision_qs",
+      "to": "examiner_review",
+      "label": "review flags + draft",
+      "variant": "default"
+    },
+    {
+      "id": "review-final",
+      "from": "examiner_review",
+      "to": "qs_finalized",
+      "label": "Lead/Approver resolves",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Guardrail contract (ADR-0004/0017)",
+      "items": [
+        "Gap Analysis Agent retries Notice Corpus/EDM timeouts with backoff internally (ADR-0018) — a timeout is never treated as \"no matching clause\"; only a real absence of a grounded citation reaches Human Review Flags",
+        "\"Human Review Flags\" merges two distinct logged reasons — insufficient_grounding (ADR-0004) and low-confidence supersession (decision 30) — both route to the same Examiner Dashboard queue but are logged distinctly in audit_log"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Tool calls (not drawn — see agent-specifications.md)",
+      "items": [
+        "Gap Analysis Agent calls notice_corpus.get_clause(), edm.query(), and supersession_graph.check() inside this node — full tool contracts, retry policy, and timeout values live in agent-specifications.md / ADR-0018, not duplicated here"
+      ]
+    }
+  ]
+}

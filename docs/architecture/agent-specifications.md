@@ -2,6 +2,8 @@
 
 Detailed contract for every agentic and non-agentic component in `docs/architecture/lfi-pipeline-v1.html` and `lfi-pipeline-deployment-v1.html`. Each agent is a LangGraph node (or small subgraph); this document is the source of truth for what to actually build — inputs, outputs, tools, model behavior, state, human checkpoints (with SLAs), and the observability/evaluation contract each agent must satisfy. Read `CONTEXT.md` for vocabulary and `docs/adr/` for the decisions behind these contracts before changing them.
 
+**The actual LangGraph node/edge/conditional-transition structure — not just this prose — lives in three workflow diagrams**, one per phase: `lfi-workflow-phase1-preexam.html`, `lfi-workflow-phase2-meeting.html`, `lfi-workflow-phase3-postexam.html`. Read the relevant one before implementing a phase; it shows every guardrail branch, human checkpoint, and (Phase 2) the sufficiency-check gate that this document's prose alone does not make unambiguous.
+
 ## Shared graph state
 
 All agents read and write a single LangGraph state object, scoped per examination (one instance per LFI per examination cycle). Fields referenced below:
@@ -14,9 +16,10 @@ All agents read and write a single LangGraph state object, scoped per examinatio
 | `supervision_questions[]` | Gap Analysis Agent, Clarification & Meeting Agent | Examiner Dashboard, Audit Trail |
 | `meeting_minutes` (raw text) | Examiner Dashboard (human input) | Clarification & Meeting Agent |
 | `further_submission_requests[]` | Clarification & Meeting Agent | Intake Tracker (next cycle) |
+| `meeting_followup_status` (sufficient / insufficient) | Clarification & Meeting Agent, via Lead/Approver sufficiency check | Findings & Reporting Agent (its actual trigger condition), Examiner Dashboard |
 | `findings[]` (severity, deadline, citations) | Findings & Reporting Agent | Examiner Dashboard, AG & Pre-Exit Agent |
 | `transmittal_letter_draft`, `pre_exit_deck_draft` | Findings & Reporting Agent | AG & Pre-Exit Agent |
-| `ag_status` (drafted / awaiting_ag / changes_requested / approved) | AG & Pre-Exit Agent | Examiner Dashboard |
+| `ag_status` (drafted / awaiting_ag / changes_requested / ag_feedback_reviewed / approved) | AG & Pre-Exit Agent | Examiner Dashboard |
 | `preexit_status` (scheduled / concerns_raised / resolved / proceeded_to_exit) | AG & Pre-Exit Agent | Examiner Dashboard |
 | `audit_log[]` (append-only) | every agent, on every state transition | Audit Trail Store |
 
@@ -46,9 +49,11 @@ State is persisted to the Fraud Database (ADR-0012) after every node execution �
   - `notice_corpus.get_clause(clause_id)` — exact verbatim sentence lookup, required before any verdict (ADR-0004).
   - `edm.query(lfi_id, period)` — read-only, context only, never written back.
   - `supersession_graph.check(clause_id)` — returns superseding clause + confidence score (decision 5, 30).
+  - **Every tool call above retries transient failures (timeout, connection error) with backoff (ADR-0018) — a tool-unavailable result is never treated as "no matching clause/data," which would silently misfire the grounding rule below.**
 - **Model behavior contract (hard rules, not prompted preferences — enforce in code, not just the prompt)**:
-  1. **No verdict without a grounded citation.** If `notice_corpus.get_clause()` returns no high-confidence exact match, the verdict is `insufficient_grounding` — never a best-guess compliant/non-compliant call (ADR-0004).
+  1. **No verdict without a grounded citation.** If `notice_corpus.get_clause()` returns no high-confidence exact match (a real absence, not a timeout — see ADR-0018), the verdict is `insufficient_grounding` — never a best-guess compliant/non-compliant call (ADR-0004).
   2. Supersession confidence below the configured threshold (decision 30 — tune empirically; start conservative) routes that clause pair to `needs_human_review` rather than resolving it silently.
+  3. In the workflow diagram (`lfi-workflow-phase1-preexam.html`), both escalation reasons above are drawn as one merged "Human Review Flags" state — they route to the same Examiner Dashboard queue but must still be logged as distinct reasons in `audit_log[]`.
 - **LangGraph shape**: a ReAct-style subgraph (retrieve → verify citation → verdict) looped once per RFI question/clause pair, not a single call over the whole document set — keeps each verdict independently inspectable and re-runnable.
 - **Human checkpoint**: none at this node itself; `insufficient_grounding` and `needs_human_review` items surface in the Examiner Dashboard's gap-analysis review screen for the examiner to resolve before supervision questions are finalized.
 
@@ -73,16 +78,23 @@ Two distinct responsibilities, both owned by this node (decision 25):
 - **Outputs**: `further_submission_requests[]` — action items that route back to the Intake Tracker for the next document-collection cycle (same Shared Workspace/Smart Portal path, per the "v1 scope" card in the architecture diagram — deliberately not drawn as a separate integration).
 - **Tools**: no external tool calls — pure extraction over the provided text, single LLM call with structured output.
 
+**(c) Sufficiency check — added after architecture review (Critical Finding #3)**
+`current_state.png`'s Phase 2 shows an explicit, iterative "documents/answers sufficient?" loop that earlier drafts of this spec left unmodeled, treating post-meeting extraction as one-shot with an undefined "further-submission loop resolved" condition. This is now a real, named gate (`lfi-workflow-phase2-meeting.html`'s "Sufficiency Check" node):
+- **Trigger**: `further_submission_requests[]` outcomes received back through Intake Tracker's next cycle.
+- **Decision maker**: **Lead/Approver, not the LLM** (ADR-0003's augmentation principle — this is a judgment call about whether the LFI's response actually closes the gap, not an extraction task).
+- **Outputs**: `meeting_followup_status` (`sufficient` / `insufficient`). `insufficient` re-enters Phase 1's Intake Tracker via the same `all_submitted` trigger for another document-collection round; `sufficient` is the condition that actually satisfies Findings & Reporting Agent's trigger below — "further-submission loop resolved" now means exactly this state value, not a prose assumption.
+
 ### Findings & Reporting Agent
 **Persona**: **Findings Author** — writes for a reader (the Assistant Governor, then LFI leadership) who wasn't in the room: every finding stands on its own, with severity and citation, no institutional memory assumed.
 
-- **Trigger**: meeting complete, further-submission loop (if any) resolved.
+- **Trigger**: `meeting_followup_status == sufficient` (the Clarification & Meeting Agent's sufficiency check, above — not an assumed "resolved").
 - **Inputs**: `compliance_verdicts[]`, `further_submission_requests[]` outcomes, EDM (for quantitative track).
 - **Outputs**: `findings[]` split into two parallel analysis tracks (ADR-0011):
   - **Qualitative**: notice/clause compliance narrative — carries forward each finding's grounding citation.
   - **Quantitative**: EDM figures analyzed on their own terms (loss ratios, volume trends) — **never** reconciled against document claims (ADR-0009/0011 — this is the one rule most likely to be broken by a well-intentioned future engineer; do not add a "compare to document" tool here).
   - `transmittal_letter_draft` and `pre_exit_deck_draft`, filled into the fixed Word/PPT templates (decision 9) from `findings[]` — the deck is a derived artifact off the same data, not independently authored (decision 26).
 - **Tools**: `severity_rubric.lookup(finding)` → severity + deadline (decision 16 — rubric is data, UI-editable, not hardcoded in this agent), `template_fill(template_id, findings[])`.
+- **Guardrail (ADR-0017)**: persisted `severity` must equal the last `severity_rubric.lookup()` return value for that finding — checked in code before the write, not left to the agent's narration. A mismatch rejects the write rather than persisting a severity the rubric didn't actually return.
 - **Human checkpoint**: **required sign-off** on findings/severity before the transmittal letter is drafted (decision 1, decision 26). `interrupt()` here.
 
 ### AG & Pre-Exit Agent
@@ -92,9 +104,10 @@ Two loops, both routine state (ADR-0010 — this is the node that most differs f
 
 **(a) AG review loop**
 - **Trigger**: signed-off `transmittal_letter_draft` + `pre_exit_deck_draft`.
-- **State transitions**: `drafted → awaiting_ag → changes_requested → (back to Findings & Reporting for redraft) → awaiting_ag → approved`.
-- **Outputs**: `ag_status`. The actual AG showcase meeting happens outside the pipeline (human process); this agent only tracks state and routes a `changes_requested` result back into Findings & Reporting as a redraft trigger.
-- **No LLM call required for the state machine itself** — this is a status tracker with a human-reported outcome (approved / changes requested), logged to the audit trail. An LLM may assist in summarizing AG feedback into actionable redraft notes, but the state transition itself is deterministic.
+- **State transitions**: `drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → (back to Findings & Reporting for redraft) → awaiting_ag → approved`.
+- **Outputs**: `ag_status`. The actual AG showcase meeting happens outside the pipeline (human process); this agent tracks state and, on `changes_requested`, produces a summarized redraft-notes artifact.
+- **No LLM call required for the state machine itself** — this is a status tracker with a human-reported outcome (approved / changes requested), logged to the audit trail.
+- **Guardrail (ADR-0017 — fixes Critical Finding #1)**: an LLM may assist in summarizing AG feedback into redraft notes, but that summary is **never passed directly to Findings & Reporting as a redraft trigger**. It surfaces first as its own reviewable artifact behind its own `interrupt()` — "AG Feedback Review" in `lfi-workflow-phase3-postexam.html` — and only Lead/Approver confirmation of that summary advances the state to `ag_feedback_reviewed` and triggers the redraft. This closes the gap where an ungrounded AI-summarized instruction could otherwise change a regulatory document based on something no human actually said.
 
 **(b) Pre-exit loop**
 - **Trigger**: `ag_status == approved`.
@@ -121,11 +134,24 @@ Every checkpoint below is a LangGraph `interrupt()` that only a Lead/Approver ca
 |---|---|---|---|---|
 | Gap-analysis review | Gap Analysis Agent | Lead/Approver | `insufficient_grounding` / `needs_human_review` items before supervision questions are finalized | 2 business days |
 | Supervision-question sign-off | Clarification & Meeting Agent | Lead/Approver | Final question list before the live meeting | Before the scheduled meeting (hard deadline, not a duration) |
+| Sufficiency check *(added — Critical Finding #3)* | Clarification & Meeting Agent | Lead/Approver | Whether further-submission responses actually close the meeting's gaps | 2 business days from further-submission receipt |
 | Findings/severity sign-off | Findings & Reporting Agent | Lead/Approver | Findings + severity before transmittal letter drafting | 3 business days |
 | AG review loop | AG & Pre-Exit Agent | Assistant Governor (outcome relayed by Lead/Approver) | Transmittal letter + pre-exit deck | No pipeline-enforced SLA — external process; track time-in-state for visibility only |
+| AG feedback review *(added — Critical Finding #1)* | AG & Pre-Exit Agent | Lead/Approver | The LLM-summarized AG feedback itself, before it can trigger a redraft | 1 business day (blocks the redraft cycle) |
 | Pre-exit concerns loop | AG & Pre-Exit Agent | Lead/Approver | Updated letter/deck after LFI raises concerns | 2 business days from concerns raised |
 
 SLA breaches and current backlog (count of unresolved checkpoints per type) surface on the Examiner Dashboard — this is what a Lead/Approver should see first, not something they have to query for.
+
+---
+
+## Failure, retry, and idempotency
+
+Full rationale: ADR-0018. Four policies apply uniformly across every agent and every checkpoint above — this section is the concrete "what to build" version, not a repeat of the ADR's reasoning.
+
+1. **Tool-call retries.** Every tool call in this document (`notice_corpus.*`, `edm.query`, `supersession_graph.check`, `severity_rubric.lookup`, `template_fill`, `ingestion_adapter.*`) retries transient failures with bounded backoff. A tool-unavailable outcome is a distinct code path from "no result found" — never collapse them, especially for `notice_corpus.get_clause()` under the citation-grounding rule (ADR-0004).
+2. **Idempotency keys.** Every state-mutating agent invocation and every `log_checkpoint()` call carries an idempotency key, so a replayed or re-run LangGraph node never double-writes state or double-logs an `audit_log[]` entry.
+3. **Optimistic concurrency on checkpoints.** Every `interrupt()` carries a version/etag. A second concurrent resolution attempt on an already-resolved checkpoint is rejected with an explicit conflict — never silently overwritten, never double-applied.
+4. **Structured-output validation and repair.** Every agent's output is schema-validated before being accepted into state. One automatic repair retry is allowed (re-prompt with the validation error attached); a second failure escalates to human review rather than accepting malformed output or silently coercing it.
 
 ---
 
