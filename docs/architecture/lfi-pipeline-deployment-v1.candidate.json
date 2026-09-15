@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "LFI Examination Pipeline — v1 Deployment Architecture",
+    "quality_profile": "showcase",
+    "engineering_profile": "deployment-ownership"
+  },
+  "components": [
+    {
+      "id": "identity_provider",
+      "type": "external",
+      "label": "Enterprise SSO",
+      "sublabel": "Azure AD / on-prem AD",
+      "pos": [
+        20,
+        80
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "llm_inference",
+      "type": "backend",
+      "label": "LLM Inference Service",
+      "sublabel": "self-hosted, GPU",
+      "tag": "ML Platform Team",
+      "pos": [
+        370,
+        80
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "lfi_workspace",
+      "type": "external",
+      "label": "Shared Workspace",
+      "sublabel": "delisted → Smart Portal",
+      "pos": [
+        550,
+        80
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "edm",
+      "type": "external",
+      "label": "EDM",
+      "sublabel": "Oracle fraud data",
+      "pos": [
+        720,
+        80
+      ],
+      "size": [
+        120,
+        64
+      ]
+    },
+    {
+      "id": "ingress",
+      "type": "security",
+      "label": "Ingress / API Gateway",
+      "sublabel": "TLS termination",
+      "tag": "Platform Team",
+      "pos": [
+        20,
+        280
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "examiner_app",
+      "type": "frontend",
+      "label": "Examiner Dashboard",
+      "sublabel": "web app",
+      "tag": "Frontend Team",
+      "pos": [
+        200,
+        280
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "orchestrator",
+      "type": "backend",
+      "label": "LangGraph Orchestrator",
+      "sublabel": "all agent nodes",
+      "tag": "AI/ML Engineering",
+      "pos": [
+        370,
+        280
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "oracle_db",
+      "type": "database",
+      "label": "Fraud Database",
+      "sublabel": "Oracle",
+      "tag": "DBA Team",
+      "pos": [
+        560,
+        280
+      ],
+      "size": [
+        140,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Primary deployment region (cloud-agnostic container platform)",
+      "wraps": [
+        "ingress",
+        "examiner_app",
+        "orchestrator",
+        "llm_inference",
+        "oracle_db"
+      ],
+      "pad": 16
+    },
+    {
+      "kind": "security-group",
+      "label": "Private data subnet",
+      "wraps": [
+        "oracle_db"
+      ],
+      "pad": 12
+    }
+  ],
+  "connections": [
+    {
+      "id": "ingress-to-app",
+      "from": "ingress",
+      "to": "examiner_app",
+      "label": "HTTPS reverse proxy",
+      "labelDy": 56
+    },
+    {
+      "id": "idp-to-ingress",
+      "from": "identity_provider",
+      "to": "ingress",
+      "label": "OIDC login redirect",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "app-to-orchestrator",
+      "from": "examiner_app",
+      "to": "orchestrator",
+      "label": "internal REST API",
+      "labelDy": 56
+    },
+    {
+      "id": "llm-to-orchestrator",
+      "from": "llm_inference",
+      "to": "orchestrator",
+      "label": "gRPC inference (in-tenant)",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "workspace-to-orchestrator",
+      "from": "lfi_workspace",
+      "to": "orchestrator",
+      "label": "SFTP",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "edm-to-orchestrator",
+      "from": "edm",
+      "to": "orchestrator",
+      "label": "Oracle DB link, read-only (TLS)",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDx": 110
+    },
+    {
+      "id": "orchestrator-to-db",
+      "from": "orchestrator",
+      "to": "oracle_db",
+      "label": "Oracle Net (TLS)",
+      "labelDy": 56
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Deployment decisions (ADR-0013/0014/0015)",
+      "items": [
+        "Deployment target intentionally cloud-agnostic: on-prem VMs, on-prem K8s/OpenShift, or a government-approved cloud tenancy all satisfy this shape",
+        "LLM is self-hosted, in-tenant — no examination data leaves the enterprise boundary at inference time",
+        "Identity federates to CBUAE's existing SSO (OIDC/SAML) — no new user store"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Data placement",
+      "items": [
+        "Fraud Database (Oracle) is the only stateful, private component — isolated in its own subnet, matches EDM's engine for operational consistency",
+        "Everything else is stateless/horizontally scalable behind the ingress"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Not yet decided",
+      "items": [
+        "Specific open-weight model and GPU sizing (pending real hardware capacity)",
+        "Specific cloud/on-prem platform (revisit ADR-0015 once chosen)",
+        "Observability stack and CI/CD pipeline (not drawn) — no existing tooling named as mandatory reuse, designed fresh alongside this diagram"
+      ]
+    }
+  ]
+}
