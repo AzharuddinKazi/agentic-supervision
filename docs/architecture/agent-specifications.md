@@ -1,6 +1,6 @@
 # Agent Specifications — LFI Examination Pipeline v1
 
-Detailed contract for every agentic and non-agentic component in `docs/architecture/lfi-pipeline-v1.html`. Each agent is a LangGraph node (or small subgraph); this document is the source of truth for what to actually build — inputs, outputs, tools, model behavior, state, and human checkpoints. Read `CONTEXT.md` for vocabulary and `docs/adr/` for the decisions behind these contracts before changing them.
+Detailed contract for every agentic and non-agentic component in `docs/architecture/lfi-pipeline-v1.html` and `lfi-pipeline-deployment-v1.html`. Each agent is a LangGraph node (or small subgraph); this document is the source of truth for what to actually build — inputs, outputs, tools, model behavior, state, human checkpoints (with SLAs), and the observability/evaluation contract each agent must satisfy. Read `CONTEXT.md` for vocabulary and `docs/adr/` for the decisions behind these contracts before changing them.
 
 ## Shared graph state
 
@@ -109,7 +109,46 @@ Two loops, both routine state (ADR-0010 — this is the node that most differs f
 Not an agent — the single UI surface (ADR-0008) where every human checkpoint above actually happens: reviewing gap-analysis flags, signing off supervision questions, submitting meeting minutes, signing off findings/severity, and recording AG/pre-exit outcomes. RBAC: Examiner (drafts, triggers agents) vs. Lead/Approver (the only role that can resolve an `interrupt()`) — decision 35.
 
 ### Audit Trail Store
-Not an agent — every agent above writes an entry here (via a shared `log_checkpoint(state_before, state_after, actor)` call) at every `interrupt()` resolution and every state-machine transition in the AG/Pre-Exit Agent. Append-only (decision 36); physically part of the Fraud Database (ADR-0012).
+Not an agent — every agent above writes an entry here (via a shared `log_checkpoint(state_before, state_after, actor)` call) at every `interrupt()` resolution and every state-machine transition in the AG/Pre-Exit Agent. Append-only (decision 36); physically part of the Fraud Database (ADR-0012). Entries are hash-chained (each includes a hash of the prior entry) so tampering is detectable (ADR-0016).
+
+---
+
+## HITL checkpoints
+
+Every checkpoint below is a LangGraph `interrupt()` that only a Lead/Approver can resolve (decision 35). `log_checkpoint()` records the agent's proposed output, the human's action (accept / edit / reject), and any edit diff — this is what makes human-agreement rate measurable (ADR-0016), not just "was it resolved."
+
+| Checkpoint | Raised by | Resolved by | What's being approved | Suggested SLA |
+|---|---|---|---|---|
+| Gap-analysis review | Gap Analysis Agent | Lead/Approver | `insufficient_grounding` / `needs_human_review` items before supervision questions are finalized | 2 business days |
+| Supervision-question sign-off | Clarification & Meeting Agent | Lead/Approver | Final question list before the live meeting | Before the scheduled meeting (hard deadline, not a duration) |
+| Findings/severity sign-off | Findings & Reporting Agent | Lead/Approver | Findings + severity before transmittal letter drafting | 3 business days |
+| AG review loop | AG & Pre-Exit Agent | Assistant Governor (outcome relayed by Lead/Approver) | Transmittal letter + pre-exit deck | No pipeline-enforced SLA — external process; track time-in-state for visibility only |
+| Pre-exit concerns loop | AG & Pre-Exit Agent | Lead/Approver | Updated letter/deck after LFI raises concerns | 2 business days from concerns raised |
+
+SLA breaches and current backlog (count of unresolved checkpoints per type) surface on the Examiner Dashboard — this is what a Lead/Approver should see first, not something they have to query for.
+
+---
+
+## Observability and evaluation
+
+Full stack rationale: ADR-0016. This section is the concrete metric contract per agent — what to emit, not just where it goes.
+
+### Golden signals (every agent and service)
+Rate, Errors, Duration (RED method) via OpenTelemetry: invocation count, error rate (including `insufficient_grounding` and other refusal outcomes — these are not errors, tag them separately from actual failures), p50/p95/p99 latency. The LLM Inference Service additionally reports GPU utilization, queue depth, and saturation (USE method).
+
+### Agent-quality (evaluation) metrics
+
+| Metric | Agent | What it catches |
+|---|---|---|
+| Citation-validity rate | Gap Analysis | % of verdicts whose cited clause ID machine-verifiably exists in Notice Corpus and matches the quoted text — automatable, gate CI/regression tests on this before any model or prompt change ships |
+| Insufficient-grounding rate | Gap Analysis | Trending up = corpus gap or model regression; trending down over time = corpus maturing. A sudden spike after a model swap (decision 49 — model stays swappable) is the first thing to check |
+| Human-agreement rate | All (per checkpoint in the HITL table) | **The primary trust metric.** Falling = quality regression. Near-100% = investigate for automation bias (decision 1's augmentation model depends on real review happening) |
+| Override/edit rate, by reason if captured | All | Inverse of agreement rate; bucket by reason to find systematic weak spots (e.g., always over-escalating one clause type) |
+| Supersession auto-resolve vs. escalate ratio | Gap Analysis | Tunes the confidence threshold (decision 30) against real cases rather than guessing |
+| Revision-loop iteration count | AG & Pre-Exit | Proxy for draft quality — repeated `changes_requested` cycles on the same letter is a signal, not just noise |
+
+### How evaluation actually runs
+Offline: a golden eval set (real, anonymized past examinations) re-run in CI before any prompt or model change ships — citation-validity and a small human-graded sample are the release gate. Online: production traces sampled into Langfuse for human spot-check scoring, plus the always-on automated citation-verifier. Both write scores to the same trace, so a regression can be traced back to a specific prompt/model version.
 
 ---
 

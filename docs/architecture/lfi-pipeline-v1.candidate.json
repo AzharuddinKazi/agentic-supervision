@@ -371,8 +371,8 @@
       "title": "Human-in-the-loop",
       "items": [
         "Supervision-question list, findings/severity, and pre-AG submission require Lead/Approver sign-off",
-        "AG-requested changes and LFI pre-exit concerns are routine revision loops back into Findings & Reporting, not rare edge cases",
-        "Ungrounded compliance verdicts fall back to human review, never a guess"
+        "AG-requested changes and LFI pre-exit concerns are routine revision loops, not rare edge cases",
+        "Ungrounded verdicts fall back to human review. Personas/SLAs/observability: deployment diagram"
       ]
     },
     {

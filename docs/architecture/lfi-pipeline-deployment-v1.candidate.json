@@ -162,7 +162,7 @@
       "tag": "ML Platform Team",
       "pos": [
         700,
-        448
+        396
       ],
       "size": [
         150,
@@ -177,10 +177,40 @@
       "tag": "DBA Team",
       "pos": [
         880,
-        448
+        396
       ],
       "size": [
         150,
+        64
+      ]
+    },
+    {
+      "id": "llm_eval",
+      "type": "backend",
+      "label": "LLM Tracing & Eval",
+      "sublabel": "Langfuse (self-hosted)",
+      "tag": "AI/ML Engineering",
+      "pos": [
+        520,
+        396
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "observability",
+      "type": "backend",
+      "label": "Observability Stack",
+      "sublabel": "OTel + Prometheus/Grafana",
+      "tag": "SRE Team",
+      "pos": [
+        1060,
+        396
+      ],
+      "size": [
+        140,
         64
       ]
     }
@@ -198,7 +228,9 @@
         "findings_reporting",
         "ag_preexit",
         "llm_inference",
-        "oracle_db"
+        "oracle_db",
+        "llm_eval",
+        "observability"
       ],
       "pad": 16
     },
@@ -212,6 +244,68 @@
     }
   ],
   "connections": [
+    {
+      "id": "clarification-to-app",
+      "from": "clarification_agent",
+      "to": "examiner_app",
+      "label": "supervision Qs sign-off (HITL)",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          775,
+          38
+        ],
+        [
+          270,
+          38
+        ]
+      ],
+      "labelAt": [
+        522,
+        26
+      ]
+    },
+    {
+      "id": "findings-to-app",
+      "from": "findings_reporting",
+      "to": "examiner_app",
+      "label": "findings sign-off (HITL)",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          955,
+          62
+        ],
+        [
+          270,
+          62
+        ]
+      ],
+      "labelAt": [
+        900,
+        58
+      ]
+    },
+    {
+      "id": "llm-to-eval",
+      "from": "llm_inference",
+      "to": "llm_eval",
+      "label": "LLM call traces (prompt/completion/tokens)",
+      "labelDy": 60
+    },
+    {
+      "id": "agpreexit-to-observability",
+      "from": "ag_preexit",
+      "to": "observability",
+      "label": "OTel traces/metrics/logs",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
     {
       "id": "idp-to-ingress",
       "from": "identity_provider",
@@ -305,12 +399,16 @@
       "via": [
         [
           1130,
-          20
+          10
         ],
         [
           270,
-          20
+          10
         ]
+      ],
+      "labelAt": [
+        700,
+        22
       ]
     }
   ],
@@ -319,25 +417,32 @@
       "dot": "cyan",
       "title": "5 agents, 1 deployable service",
       "items": [
-        "Intake Tracker, Gap Analysis, Clarification & Meeting, Findings & Reporting, and AG & Pre-Exit run as one LangGraph process (shared runtime), but are 5 distinct nodes with independent prompts, tools, and guardrails",
-        "Intake Tracker is rule-based, not an LLM agent (labeled on its box)",
-        "Persona shown on each box; hover/zoom reveals its guardrail. Full detail: agent-specifications.md"
+        "One LangGraph runtime, 5 independent agents — Intake Tracker is rule-based, not LLM",
+        "Persona on each box, guardrail on hover. Full detail: agent-specifications.md"
       ]
     },
     {
       "dot": "violet",
-      "title": "Shared dependencies (not all arrows drawn)",
+      "title": "HITL checkpoints (ADR-0016)",
       "items": [
-        "Every agent calls LLM Inference Service — only Clarification & Meeting's call is drawn as representative",
-        "Every agent persists state to the Fraud Database after each step (audit trail, decision 36) — only Findings & Reporting's write is drawn as representative"
+        "5 checkpoints with SLAs — table in agent-specifications.md",
+        "Primary trust metric: human-agreement rate. Near-100% = automation-bias risk, not a win"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Observability & evaluation (ADR-0016)",
+      "items": [
+        "OTel + Prometheus/Grafana for infra; self-hosted Langfuse traces every LLM call and hosts evals",
+        "Citation-validity rate gates CI before any prompt/model change ships"
       ]
     },
     {
       "dot": "emerald",
-      "title": "Deployment decisions (ADR-0013/0014/0015)",
+      "title": "Deployment (ADR-0013/0014/0015)",
       "items": [
-        "On-prem for now; LLM self-hosted with Qwen Coder / gpt-oss-120b as candidates behind a swappable interface",
-        "Identity federates to CBUAE's existing SSO; Fraud Database is Oracle, isolated in its own subnet"
+        "On-prem for now; LLM self-hosted, Qwen Coder / gpt-oss-120b as swappable candidates",
+        "Identity via CBUAE SSO; Fraud DB is Oracle, isolated subnet"
       ]
     }
   ]
