@@ -173,7 +173,7 @@
       "id": "oracle_db",
       "type": "database",
       "label": "Fraud Database",
-      "sublabel": "Oracle",
+      "sublabel": "Oracle, encrypted at rest",
       "tag": "DBA Team",
       "pos": [
         880,
@@ -181,6 +181,21 @@
       ],
       "size": [
         150,
+        64
+      ]
+    },
+    {
+      "id": "secrets_manager",
+      "type": "security",
+      "label": "Secrets Manager",
+      "sublabel": "SFTP / DB / mTLS creds",
+      "tag": "Platform Team",
+      "pos": [
+        370,
+        522
+      ],
+      "size": [
+        140,
         64
       ]
     },
@@ -230,7 +245,8 @@
         "llm_inference",
         "oracle_db",
         "llm_eval",
-        "observability"
+        "observability",
+        "secrets_manager"
       ],
       "pad": 16
     },
@@ -239,6 +255,22 @@
       "label": "Private data subnet",
       "wraps": [
         "oracle_db"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "security-group",
+      "label": "Model/Inference Zone (ADR-0019)",
+      "wraps": [
+        "llm_inference"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "security-group",
+      "label": "Secrets vault",
+      "wraps": [
+        "secrets_manager"
       ],
       "pad": 12
     }
@@ -389,6 +421,16 @@
       "labelDy": 24
     },
     {
+      "id": "secrets-to-intake",
+      "from": "secrets_manager",
+      "to": "intake_tracker",
+      "label": "SFTP creds (+ DB/mTLS — not drawn)",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDy": -30
+    },
+    {
       "id": "agpreexit-to-app",
       "from": "ag_preexit",
       "to": "examiner_app",
@@ -415,10 +457,18 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "5 agents, 1 deployable service",
+      "title": "4 LLM agents + 1 rule-based service",
       "items": [
-        "One LangGraph runtime, 5 independent agents — Intake Tracker is rule-based, not LLM",
+        "One LangGraph runtime — Intake Tracker is rule-based, not LLM",
         "Persona on each box, guardrail on hover. Full detail: agent-specifications.md"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Threat model (ADR-0019)",
+      "items": [
+        "LLM Inference Service isolated in its own security zone — only the 4 LLM agents may call it, over mTLS",
+        "Secrets Manager holds SFTP/DB/mTLS creds; Fraud DB encrypted at rest"
       ]
     },
     {

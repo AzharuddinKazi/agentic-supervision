@@ -4,6 +4,8 @@ Detailed contract for every agentic and non-agentic component in `docs/architect
 
 **The actual LangGraph node/edge/conditional-transition structure — not just this prose — lives in three workflow diagrams**, one per phase: `lfi-workflow-phase1-preexam.html`, `lfi-workflow-phase2-meeting.html`, `lfi-workflow-phase3-postexam.html`. Read the relevant one before implementing a phase; it shows every guardrail branch, human checkpoint, and (Phase 2) the sufficiency-check gate that this document's prose alone does not make unambiguous.
 
+**Every tool named below has a real input/output/timeout/retry contract in `docs/architecture/tool-contracts.md`** — this document names which tool each agent calls and why; that one specifies exactly what calling it looks like, including its distinct error/timeout shape (never collapsed into "no result found," ADR-0018).
+
 ## Shared graph state
 
 All agents read and write a single LangGraph state object, scoped per examination (one instance per LFI per examination cycle). Fields referenced below:
@@ -17,7 +19,7 @@ All agents read and write a single LangGraph state object, scoped per examinatio
 | `meeting_minutes` (raw text) | Examiner Dashboard (human input) | Clarification & Meeting Agent |
 | `further_submission_requests[]` | Clarification & Meeting Agent | Intake Tracker (next cycle) |
 | `meeting_followup_status` (sufficient / insufficient) | Clarification & Meeting Agent, via Lead/Approver sufficiency check | Findings & Reporting Agent (its actual trigger condition), Examiner Dashboard |
-| `findings[]` (severity, deadline, citations) | Findings & Reporting Agent | Examiner Dashboard, AG & Pre-Exit Agent |
+| `findings[]` (severity, deadline, `rubric_version`, citations) | Findings & Reporting Agent | Examiner Dashboard, AG & Pre-Exit Agent |
 | `transmittal_letter_draft`, `pre_exit_deck_draft` | Findings & Reporting Agent | AG & Pre-Exit Agent |
 | `ag_status` (drafted / awaiting_ag / changes_requested / ag_feedback_reviewed / approved) | AG & Pre-Exit Agent | Examiner Dashboard |
 | `preexit_status` (scheduled / concerns_raised / resolved / proceeded_to_exit) | AG & Pre-Exit Agent | Examiner Dashboard |
@@ -93,8 +95,10 @@ Two distinct responsibilities, both owned by this node (decision 25):
   - **Qualitative**: notice/clause compliance narrative — carries forward each finding's grounding citation.
   - **Quantitative**: EDM figures analyzed on their own terms (loss ratios, volume trends) — **never** reconciled against document claims (ADR-0009/0011 — this is the one rule most likely to be broken by a well-intentioned future engineer; do not add a "compare to document" tool here).
   - `transmittal_letter_draft` and `pre_exit_deck_draft`, filled into the fixed Word/PPT templates (decision 9) from `findings[]` — the deck is a derived artifact off the same data, not independently authored (decision 26).
-- **Tools**: `severity_rubric.lookup(finding)` → severity + deadline (decision 16 — rubric is data, UI-editable, not hardcoded in this agent), `template_fill(template_id, findings[])`.
-- **Guardrail (ADR-0017)**: persisted `severity` must equal the last `severity_rubric.lookup()` return value for that finding — checked in code before the write, not left to the agent's narration. A mismatch rejects the write rather than persisting a severity the rubric didn't actually return.
+- **Tools**: `severity_rubric.lookup(finding, rubric_version?)` → severity + deadline + the rubric version actually used (ADR-0020 — this is a **shared, versioned platform service**, not an agent-owned dependency: decision 16's UI-editable rubric can change mid-cycle, so every finding records which version it was evaluated against); `quant_analysis.compute(lfi_id, period_range, metric)` → deterministic ratio/trend/delta (ADR-0021 — **code, not the LLM**, does this arithmetic; the LLM only narrates the returned number); `template_fill(template_id, findings[])`. Full contracts (schema/timeout/retry) in `docs/architecture/tool-contracts.md`.
+- **Guardrails**:
+  - **(ADR-0017/ADR-0020)** Persisted `severity` and `rubric_version` must equal the last `severity_rubric.lookup()` call's return values for that finding — checked in code before the write, not left to the agent's narration. A mismatch on either field rejects the write. A redraft (AG/pre-exit revision loop) re-evaluates against the rubric version current at redraft time, not the original draft's version (ADR-0020); if that version differs from the original, the sign-off checkpoint below must surface this explicitly to the Lead/Approver, not apply it silently.
+  - **(ADR-0021)** No quantitative finding may be persisted with a number that is not traceable to a specific `quant_analysis.compute()` return value — same enforcement pattern as the severity guardrail.
 - **Human checkpoint**: **required sign-off** on findings/severity before the transmittal letter is drafted (decision 1, decision 26). `interrupt()` here.
 
 ### AG & Pre-Exit Agent
@@ -175,6 +179,24 @@ Rate, Errors, Duration (RED method) via OpenTelemetry: invocation count, error r
 
 ### How evaluation actually runs
 Offline: a golden eval set (real, anonymized past examinations) re-run in CI before any prompt or model change ships — citation-validity and a small human-graded sample are the release gate. Online: production traces sampled into Langfuse for human spot-check scoring, plus the always-on automated citation-verifier. Both write scores to the same trace, so a regression can be traced back to a specific prompt/model version.
+
+---
+
+## Testing, canary, and rollback (ADR-0023)
+
+The golden eval set above gates citation quality; it catches nothing about the graph's structural correctness or a mid-cycle model swap's blast radius. Required before implementation is considered done:
+1. **Unit tests** for every tool contract's error/timeout path (`docs/architecture/tool-contracts.md`) — not just the happy path.
+2. **LangGraph integration tests** exercising every `interrupt()`/resume path and both AG/pre-exit revision loops (ADR-0010) against a simulated crash-and-resume.
+3. **Canary process** for any model/prompt swap (decision 49 keeps the model swappable): candidate runs against the golden eval set plus a shadow-traffic sample before promotion, with a pilot-subset human-agreement-rate comparison before full cutover.
+4. **In-flight examinations are pinned** to the model version they started under until a natural phase boundary (end of Phase 1/2, or completion) — never silently switched mid-clause-verdict-loop.
+
+## Capacity (ADR-0022, placeholder)
+
+No real FPSD usage data exists yet — treat every number here as illustrative, revisit once the examiner team's actual annual examination count and concurrency are known (same "tune empirically" treatment as decision 30's supersession threshold). Rough placeholder: ~8 peak-concurrent examinations, ~40 RFI questions each driving Gap Analysis Agent's per-clause ReAct loop, pointing to a 2-4 GPU placeholder for the LLM Inference Service — moves once the model choice (decision 49: Qwen Coder vs. gpt-oss-120b, neither committed) and real concurrency are known. Full methodology in ADR-0022.
+
+## Threat model and network isolation (ADR-0019)
+
+The LLM Inference Service sits in its own `security-group` boundary in the deployment diagram — only the four LLM agents (not Intake Tracker, which is rule-based) may call it, over mTLS. The Fraud Database uses encryption at rest (TDE or equivalent). A `secrets_manager` component holds SFTP credentials, the Oracle connection string, and service-auth tokens — which specific product is an open item for CBUAE's platform team, not assumed here. Full rationale in ADR-0019; a fuller threat-modeling exercise (ingestion-path attack surface, formal STRIDE pass, CBUAE security sign-off) remains explicitly out of scope for this document.
 
 ---
 
