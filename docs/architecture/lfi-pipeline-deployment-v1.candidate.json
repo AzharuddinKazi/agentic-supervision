@@ -14,22 +14,7 @@
       "sublabel": "Azure AD / on-prem AD",
       "pos": [
         20,
-        80
-      ],
-      "size": [
-        140,
-        64
-      ]
-    },
-    {
-      "id": "llm_inference",
-      "type": "backend",
-      "label": "LLM Inference Service",
-      "sublabel": "self-hosted, GPU",
-      "tag": "ML Platform Team",
-      "pos": [
-        370,
-        80
+        70
       ],
       "size": [
         150,
@@ -42,11 +27,11 @@
       "label": "Shared Workspace",
       "sublabel": "delisted → Smart Portal",
       "pos": [
-        550,
-        80
+        370,
+        70
       ],
       "size": [
-        150,
+        140,
         64
       ]
     },
@@ -56,8 +41,8 @@
       "label": "EDM",
       "sublabel": "Oracle fraud data",
       "pos": [
-        720,
-        80
+        610,
+        70
       ],
       "size": [
         120,
@@ -72,7 +57,7 @@
       "tag": "Platform Team",
       "pos": [
         20,
-        280
+        270
       ],
       "size": [
         150,
@@ -87,7 +72,7 @@
       "tag": "Frontend Team",
       "pos": [
         200,
-        280
+        270
       ],
       "size": [
         140,
@@ -95,17 +80,92 @@
       ]
     },
     {
-      "id": "orchestrator",
+      "id": "intake_tracker",
       "type": "backend",
-      "label": "LangGraph Orchestrator",
-      "sublabel": "all agent nodes",
-      "tag": "AI/ML Engineering",
+      "label": "Intake Tracker",
+      "sublabel": "Rule-based (not LLM)",
+      "tag": "presence · format check",
       "pos": [
         370,
-        280
+        270
       ],
       "size": [
-        160,
+        140,
+        64
+      ]
+    },
+    {
+      "id": "gap_analysis",
+      "type": "backend",
+      "label": "Gap Analysis Agent",
+      "sublabel": "Compliance Analyst",
+      "tag": "citation-grounded",
+      "pos": [
+        540,
+        270
+      ],
+      "size": [
+        130,
+        64
+      ]
+    },
+    {
+      "id": "clarification_agent",
+      "type": "backend",
+      "label": "Clarification & Meeting",
+      "sublabel": "Meeting Facilitator",
+      "tag": "Qs + minutes → actions",
+      "pos": [
+        700,
+        270
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "findings_reporting",
+      "type": "backend",
+      "label": "Findings & Reporting",
+      "sublabel": "Findings Author",
+      "tag": "qual + quant → letter + deck",
+      "pos": [
+        880,
+        270
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "ag_preexit",
+      "type": "backend",
+      "label": "AG & Pre-Exit",
+      "sublabel": "Approval Coordinator",
+      "tag": "showcase → revise loop",
+      "pos": [
+        1060,
+        270
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "llm_inference",
+      "type": "backend",
+      "label": "LLM Inference Service",
+      "sublabel": "self-hosted, GPU",
+      "tag": "ML Platform Team",
+      "pos": [
+        700,
+        448
+      ],
+      "size": [
+        150,
         64
       ]
     },
@@ -116,11 +176,11 @@
       "sublabel": "Oracle",
       "tag": "DBA Team",
       "pos": [
-        560,
-        280
+        880,
+        448
       ],
       "size": [
-        140,
+        150,
         64
       ]
     }
@@ -132,7 +192,11 @@
       "wraps": [
         "ingress",
         "examiner_app",
-        "orchestrator",
+        "intake_tracker",
+        "gap_analysis",
+        "clarification_agent",
+        "findings_reporting",
+        "ag_preexit",
         "llm_inference",
         "oracle_db"
       ],
@@ -149,6 +213,15 @@
   ],
   "connections": [
     {
+      "id": "idp-to-ingress",
+      "from": "identity_provider",
+      "to": "ingress",
+      "label": "OIDC login redirect",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
       "id": "ingress-to-app",
       "from": "ingress",
       "to": "examiner_app",
@@ -156,79 +229,115 @@
       "labelDy": 56
     },
     {
-      "id": "idp-to-ingress",
-      "from": "identity_provider",
-      "to": "ingress",
-      "label": "OIDC login redirect",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "app-to-orchestrator",
+      "id": "app-to-intake",
       "from": "examiner_app",
-      "to": "orchestrator",
+      "to": "intake_tracker",
       "label": "internal REST API",
       "labelDy": 56
     },
     {
-      "id": "llm-to-orchestrator",
-      "from": "llm_inference",
-      "to": "orchestrator",
-      "label": "gRPC inference (in-tenant)",
+      "id": "workspace-to-intake",
+      "from": "lfi_workspace",
+      "to": "intake_tracker",
+      "label": "SFTP",
       "fromSide": "bottom",
       "toSide": "top",
       "labelDy": 24
     },
     {
-      "id": "workspace-to-orchestrator",
-      "from": "lfi_workspace",
-      "to": "orchestrator",
-      "label": "SFTP",
+      "id": "intake-to-gap",
+      "from": "intake_tracker",
+      "to": "gap_analysis",
+      "label": "all_submitted event",
+      "labelDy": 56
+    },
+    {
+      "id": "edm-to-gap",
+      "from": "edm",
+      "to": "gap_analysis",
+      "label": "Oracle DB link, read-only (TLS)",
       "fromSide": "bottom",
       "toSide": "top"
     },
     {
-      "id": "edm-to-orchestrator",
-      "from": "edm",
-      "to": "orchestrator",
-      "label": "Oracle DB link, read-only (TLS)",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "labelDx": 110
+      "id": "gap-to-clarification",
+      "from": "gap_analysis",
+      "to": "clarification_agent",
+      "label": "verdicts + supervision Qs",
+      "labelDy": 56
     },
     {
-      "id": "orchestrator-to-db",
-      "from": "orchestrator",
+      "id": "clarification-to-findings",
+      "from": "clarification_agent",
+      "to": "findings_reporting",
+      "label": "meeting outcomes",
+      "labelDy": 56
+    },
+    {
+      "id": "findings-to-agpreexit",
+      "from": "findings_reporting",
+      "to": "ag_preexit",
+      "label": "letter + deck draft",
+      "labelDy": 56
+    },
+    {
+      "id": "clarification-to-llm",
+      "from": "clarification_agent",
+      "to": "llm_inference",
+      "label": "gRPC inference (in-tenant)",
+      "labelDy": 24
+    },
+    {
+      "id": "findings-to-db",
+      "from": "findings_reporting",
       "to": "oracle_db",
       "label": "Oracle Net (TLS)",
-      "labelDy": 56
+      "labelDy": 24
+    },
+    {
+      "id": "agpreexit-to-app",
+      "from": "ag_preexit",
+      "to": "examiner_app",
+      "label": "revision requested",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          1130,
+          20
+        ],
+        [
+          270,
+          20
+        ]
+      ]
     }
   ],
   "cards": [
     {
       "dot": "cyan",
-      "title": "Deployment decisions (ADR-0013/0014/0015)",
+      "title": "5 agents, 1 deployable service",
       "items": [
-        "Deployment target: on-prem for now (container platform) — revisit if that changes; the shape stays portable",
-        "LLM is self-hosted, in-tenant, model treated as a swappable black box — candidates already available on-prem: Qwen Coder, gpt-oss-120b",
-        "Identity federates to CBUAE's existing SSO (OIDC/SAML) — no new user store"
+        "Intake Tracker, Gap Analysis, Clarification & Meeting, Findings & Reporting, and AG & Pre-Exit run as one LangGraph process (shared runtime), but are 5 distinct nodes with independent prompts, tools, and guardrails",
+        "Intake Tracker is rule-based, not an LLM agent (labeled on its box)",
+        "Persona shown on each box; hover/zoom reveals its guardrail. Full detail: agent-specifications.md"
       ]
     },
     {
       "dot": "violet",
-      "title": "Data placement",
+      "title": "Shared dependencies (not all arrows drawn)",
       "items": [
-        "Fraud Database (Oracle) is the only stateful, private component — isolated in its own subnet, matches EDM's engine for operational consistency",
-        "Everything else is stateless/horizontally scalable behind the ingress"
+        "Every agent calls LLM Inference Service — only Clarification & Meeting's call is drawn as representative",
+        "Every agent persists state to the Fraud Database after each step (audit trail, decision 36) — only Findings & Reporting's write is drawn as representative"
       ]
     },
     {
       "dot": "emerald",
-      "title": "Not yet decided",
+      "title": "Deployment decisions (ADR-0013/0014/0015)",
       "items": [
-        "Which of the available on-prem models (Qwen Coder / gpt-oss-120b) to use, and GPU sizing — kept as a black box behind the inference service",
-        "Specific on-prem container platform (VMs vs. K8s/OpenShift) — revisit ADR-0015 once chosen",
-        "Observability stack and CI/CD pipeline (not drawn) — no existing tooling named as mandatory reuse, designed fresh alongside this diagram"
+        "On-prem for now; LLM self-hosted with Qwen Coder / gpt-oss-120b as candidates behind a swappable interface",
+        "Identity federates to CBUAE's existing SSO; Fraud Database is Oracle, isolated in its own subnet"
       ]
     }
   ]

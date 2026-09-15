@@ -27,7 +27,7 @@ State is persisted to the Fraud Database (ADR-0012) after every node execution �
 ## Phase 1 — Pre-Examination
 
 ### Intake Tracker
-**Not an LLM agent** — a deterministic rule-based service. Included here because it gates Gap Analysis.
+**Persona**: none — **not an LLM agent**, a deterministic rule-based service. Included here because it gates Gap Analysis.
 
 - **Trigger**: scheduled poll of the Ingestion Adapter (e.g., every 15 min) during the 30-day RFI window, and on-demand via Examiner Dashboard refresh.
 - **Inputs**: `rfi_store` (expected question → folder/filename convention, per decision 15), Ingestion Adapter's `list_documents()` output.
@@ -36,6 +36,8 @@ State is persisted to the Fraud Database (ADR-0012) after every node execution �
 - **Trigger for Gap Analysis**: fires the `all_submitted` event only when every RFI question's status is `submitted` (decision 39 — batch, not incremental).
 
 ### Gap Analysis Agent
+**Persona**: **Compliance Analyst** — meticulous, cites chapter and verse, and says "I can't confirm this" rather than guess. System-prompt framing should make refusal-to-guess feel like professional competence, not failure, since the grounding rule (below) depends on the model being comfortable abstaining.
+
 - **Trigger**: `all_submitted` event from Intake Tracker.
 - **Inputs**: `rfi_responses[]` (documents), Notice Corpus (clause citations), EDM (fraud-data context, decision 21).
 - **Outputs**: `compliance_verdicts[]` and the three Phase-1 artifacts — **supervision questions**, **LFI gaps and findings**, **areas of strengths and weaknesses** (decision 67 in `CONTEXT.md`'s Gap Analysis entry).
@@ -55,6 +57,8 @@ State is persisted to the Fraud Database (ADR-0012) after every node execution �
 ## Phase 2 — Examination (Onsite)
 
 ### Clarification & Meeting Agent
+**Persona**: **Meeting Facilitator** — drafts sharp, specific questions an examiner could ask cold, and later reads meeting minutes the way a careful note-taker would: extracting commitments, not paraphrasing small talk.
+
 Two distinct responsibilities, both owned by this node (decision 25):
 
 **(a) Pre-meeting drafting**
@@ -70,6 +74,8 @@ Two distinct responsibilities, both owned by this node (decision 25):
 - **Tools**: no external tool calls — pure extraction over the provided text, single LLM call with structured output.
 
 ### Findings & Reporting Agent
+**Persona**: **Findings Author** — writes for a reader (the Assistant Governor, then LFI leadership) who wasn't in the room: every finding stands on its own, with severity and citation, no institutional memory assumed.
+
 - **Trigger**: meeting complete, further-submission loop (if any) resolved.
 - **Inputs**: `compliance_verdicts[]`, `further_submission_requests[]` outcomes, EDM (for quantitative track).
 - **Outputs**: `findings[]` split into two parallel analysis tracks (ADR-0011):
@@ -80,6 +86,8 @@ Two distinct responsibilities, both owned by this node (decision 25):
 - **Human checkpoint**: **required sign-off** on findings/severity before the transmittal letter is drafted (decision 1, decision 26). `interrupt()` here.
 
 ### AG & Pre-Exit Agent
+**Persona**: **Approval Coordinator** — a state-tracker, not a persuader; it never drafts arguments to win over the AG or the LFI, it only tracks what was asked for and routes redrafts. Where an LLM is involved (summarizing feedback into redraft notes), it stays strictly descriptive.
+
 Two loops, both routine state (ADR-0010 — this is the node that most differs from the original design, so read ADR-0010 before touching it):
 
 **(a) AG review loop**
