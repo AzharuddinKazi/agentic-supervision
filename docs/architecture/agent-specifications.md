@@ -12,6 +12,7 @@ All agents read and write a single LangGraph state object, scoped per examinatio
 
 | Field | Written by | Read by |
 |---|---|---|
+| `schema_version` (integer, ADR-0025) | set at state creation; bumped only by a tested migration | every agent, before reading any other field |
 | `rfi_responses[]` | Intake Tracker | Gap Analysis Agent |
 | `intake_status` (per RFI question: submitted / pending / suspicious) | Intake Tracker | Examiner Dashboard |
 | `compliance_verdicts[]` | Gap Analysis Agent | Examiner Dashboard, Clarification & Meeting Agent |
@@ -25,7 +26,7 @@ All agents read and write a single LangGraph state object, scoped per examinatio
 | `preexit_status` (scheduled / concerns_raised / resolved / proceeded_to_exit) | AG & Pre-Exit Agent | Examiner Dashboard |
 | `audit_log[]` (append-only) | every agent, on every state transition | Audit Trail Store |
 
-State is persisted to the Fraud Database (ADR-0012) after every node execution — this is what makes LangGraph's interrupt/resume (ADR-0001) durable across the 30-day RFI window and the days/weeks between examination phases.
+State is persisted to the Fraud Database (ADR-0012) after every node execution — this is what makes LangGraph's interrupt/resume (ADR-0001) durable across the 30-day RFI window and the days/weeks between examination phases. Any breaking change to this table's shape bumps `schema_version` and ships with a migration function tested against an in-flight checkpoint (ADR-0025) — a deploy must not assume no examination is mid-flight under an older schema.
 
 ---
 
@@ -123,7 +124,7 @@ Two loops, both routine state (ADR-0010 — this is the node that most differs f
 ## Cross-cutting
 
 ### Examiner Dashboard
-Not an agent — the single UI surface (ADR-0008) where every human checkpoint above actually happens: reviewing gap-analysis flags, signing off supervision questions, submitting meeting minutes, signing off findings/severity, and recording AG/pre-exit outcomes. RBAC: Examiner (drafts, triggers agents) vs. Lead/Approver (the only role that can resolve an `interrupt()`) — decision 35.
+Not an agent — the single UI surface (ADR-0008) where every human checkpoint above actually happens: reviewing gap-analysis flags, signing off supervision questions, submitting meeting minutes, signing off findings/severity, and recording AG/pre-exit outcomes. RBAC: Examiner (drafts, triggers agents) vs. Lead/Approver (the only role that can resolve an `interrupt()`) — decision 35. A third role, Auditor/Compliance Reviewer (ADR-0024), has read-only access to `audit_log[]` and Langfuse traces for audit consumption (ADR-0016) — it cannot trigger agents or resolve an `interrupt()`, and its access is subject to periodic review.
 
 ### Audit Trail Store
 Not an agent — every agent above writes an entry here (via a shared `log_checkpoint(state_before, state_after, actor)` call) at every `interrupt()` resolution and every state-machine transition in the AG/Pre-Exit Agent. Append-only (decision 36); physically part of the Fraud Database (ADR-0012). Entries are hash-chained (each includes a hash of the prior entry) so tampering is detectable (ADR-0016).

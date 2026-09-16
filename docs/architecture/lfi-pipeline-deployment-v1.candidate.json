@@ -488,7 +488,7 @@
       ]
     },
     {
-      "dot": "emerald",
+      "dot": "slate",
       "title": "Deployment (ADR-0013/0014/0015)",
       "items": [
         "On-prem for now; LLM self-hosted, Qwen Coder / gpt-oss-120b as swappable candidates",

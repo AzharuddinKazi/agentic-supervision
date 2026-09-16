@@ -108,6 +108,7 @@
       "type": "database",
       "label": "RFI Store",
       "sublabel": "Excel: ID + clause",
+      "tag": "Fraud DB",
       "pos": [
         348,
         170
@@ -475,7 +476,8 @@
       "items": [
         "Content/plausibility validation agent",
         "Unified cross-feature review queue",
-        "Effective-dated notice versions and SVF/other license types"
+        "Effective-dated notice versions and SVF/other license types",
+        "Card color key: emerald is reserved for \"deferred/out of scope\" across every diagram in this repo — never reused for an in-scope category (see the deployment diagram's cards)"
       ]
     }
   ]
