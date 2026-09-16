@@ -2,7 +2,7 @@
 
 Detailed contract for every agentic and non-agentic component in `docs/architecture/lfi-pipeline-v1.html` and `lfi-pipeline-deployment-v1.html`. Each agent is a LangGraph node (or small subgraph); this document is the source of truth for what to actually build — inputs, outputs, tools, model behavior, state, human checkpoints (with SLAs), and the observability/evaluation contract each agent must satisfy. Read `CONTEXT.md` for vocabulary and `docs/adr/` for the decisions behind these contracts before changing them.
 
-**The actual LangGraph node/edge/conditional-transition structure — not just this prose — lives in three workflow diagrams**, one per phase: `lfi-workflow-phase1-preexam.html`, `lfi-workflow-phase2-meeting.html`, `lfi-workflow-phase3-postexam.html`. Read the relevant one before implementing a phase; it shows every guardrail branch, human checkpoint, and (Phase 2) the sufficiency-check gate that this document's prose alone does not make unambiguous.
+**The actual LangGraph node/edge/conditional-transition structure — not just this prose — lives in three workflow diagrams**, one per phase: `lfi-workflow-phase1-preexam-v1.html`, `lfi-workflow-phase2-meeting-v1.html`, `lfi-workflow-phase3-postexam-v1.html`. Read the relevant one before implementing a phase; it shows every guardrail branch, human checkpoint, and (Phase 2) the sufficiency-check gate that this document's prose alone does not make unambiguous.
 
 **Every tool named below has a real input/output/timeout/retry contract in `docs/architecture/tool-contracts.md`** — this document names which tool each agent calls and why; that one specifies exactly what calling it looks like, including its distinct error/timeout shape (never collapsed into "no result found," ADR-0018).
 
@@ -56,7 +56,7 @@ State is persisted to the Fraud Database (ADR-0012) after every node execution �
 - **Model behavior contract (hard rules, not prompted preferences — enforce in code, not just the prompt)**:
   1. **No verdict without a grounded citation.** If `notice_corpus.get_clause()` returns no high-confidence exact match (a real absence, not a timeout — see ADR-0018), the verdict is `insufficient_grounding` — never a best-guess compliant/non-compliant call (ADR-0004).
   2. Supersession confidence below the configured threshold (decision 30 — tune empirically; start conservative) routes that clause pair to `needs_human_review` rather than resolving it silently.
-  3. In the workflow diagram (`lfi-workflow-phase1-preexam.html`), both escalation reasons above are drawn as one merged "Human Review Flags" state — they route to the same Examiner Dashboard queue but must still be logged as distinct reasons in `audit_log[]`.
+  3. In the workflow diagram (`lfi-workflow-phase1-preexam-v1.html`), both escalation reasons above are drawn as one merged "Human Review Flags" state — they route to the same Examiner Dashboard queue but must still be logged as distinct reasons in `audit_log[]`.
 - **LangGraph shape**: a ReAct-style subgraph (retrieve → verify citation → verdict) looped once per RFI question/clause pair, not a single call over the whole document set — keeps each verdict independently inspectable and re-runnable.
 - **Human checkpoint**: none at this node itself; `insufficient_grounding` and `needs_human_review` items surface in the Examiner Dashboard's gap-analysis review screen for the examiner to resolve before supervision questions are finalized.
 
@@ -82,7 +82,7 @@ Two distinct responsibilities, both owned by this node (decision 25):
 - **Tools**: no external tool calls — pure extraction over the provided text, single LLM call with structured output.
 
 **(c) Sufficiency check — added after architecture review (Critical Finding #3)**
-`current_state.png`'s Phase 2 shows an explicit, iterative "documents/answers sufficient?" loop that earlier drafts of this spec left unmodeled, treating post-meeting extraction as one-shot with an undefined "further-submission loop resolved" condition. This is now a real, named gate (`lfi-workflow-phase2-meeting.html`'s "Sufficiency Check" node):
+`current_state.png`'s Phase 2 shows an explicit, iterative "documents/answers sufficient?" loop that earlier drafts of this spec left unmodeled, treating post-meeting extraction as one-shot with an undefined "further-submission loop resolved" condition. This is now a real, named gate (`lfi-workflow-phase2-meeting-v1.html`'s "Sufficiency Check" node):
 - **Trigger**: `further_submission_requests[]` outcomes received back through Intake Tracker's next cycle.
 - **Decision maker**: **Lead/Approver, not the LLM** (ADR-0003's augmentation principle — this is a judgment call about whether the LFI's response actually closes the gap, not an extraction task).
 - **Outputs**: `meeting_followup_status` (`sufficient` / `insufficient`). `insufficient` re-enters Phase 1's Intake Tracker via the same `all_submitted` trigger for another document-collection round; `sufficient` is the condition that actually satisfies Findings & Reporting Agent's trigger below — "further-submission loop resolved" now means exactly this state value, not a prose assumption.
@@ -112,7 +112,7 @@ Two loops, both routine state (ADR-0010 — this is the node that most differs f
 - **State transitions**: `drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → (back to Findings & Reporting for redraft) → awaiting_ag → approved`.
 - **Outputs**: `ag_status`. The actual AG showcase meeting happens outside the pipeline (human process); this agent tracks state and, on `changes_requested`, produces a summarized redraft-notes artifact.
 - **No LLM call required for the state machine itself** — this is a status tracker with a human-reported outcome (approved / changes requested), logged to the audit trail.
-- **Guardrail (ADR-0017 — fixes Critical Finding #1)**: an LLM may assist in summarizing AG feedback into redraft notes, but that summary is **never passed directly to Findings & Reporting as a redraft trigger**. It surfaces first as its own reviewable artifact behind its own `interrupt()` — "AG Feedback Review" in `lfi-workflow-phase3-postexam.html` — and only Lead/Approver confirmation of that summary advances the state to `ag_feedback_reviewed` and triggers the redraft. This closes the gap where an ungrounded AI-summarized instruction could otherwise change a regulatory document based on something no human actually said.
+- **Guardrail (ADR-0017 — fixes Critical Finding #1)**: an LLM may assist in summarizing AG feedback into redraft notes, but that summary is **never passed directly to Findings & Reporting as a redraft trigger**. It surfaces first as its own reviewable artifact behind its own `interrupt()` — "AG Feedback Review" in `lfi-workflow-phase3-postexam-v1.html` — and only Lead/Approver confirmation of that summary advances the state to `ag_feedback_reviewed` and triggers the redraft. This closes the gap where an ungrounded AI-summarized instruction could otherwise change a regulatory document based on something no human actually said.
 
 **(b) Pre-exit loop**
 - **Trigger**: `ag_status == approved`.

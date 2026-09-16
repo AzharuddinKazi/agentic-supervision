@@ -25,7 +25,7 @@ CLAUDE.md                      Project instructions for AI coding agents working
 - **`docs/adr/`** — read the ADRs relevant to the area you're touching before making architectural changes. Each one records a decision, its rationale, and what alternative was rejected and why.
 - **`docs/architecture/lfi-pipeline-v1.html`** — the v1 logical architecture diagram, phase-segregated to match `current_state.png`'s own phase names (Sending out the RFIs / Examination Phase Onsite / Pre-Exit Phase). Color encodes automation role, not just architecture layer — see the diagram's own legend and "How to read the colors" card: grey = human step or external system, teal = LLM agent (reasoning only), peach = LLM agent + tool call, gold = deterministic tool/rule-based service, violet = data store, blue = human-facing UI.
 - **`docs/architecture/lfi-pipeline-deployment-v1.html`** — the v1 deployment architecture (4 LLM agents + 1 rule-based service individually shown with persona/tools, infra ownership, network zones, observability/eval stack).
-- **`docs/architecture/lfi-workflow-phase{1,2,3}-*.html`** — the actual LangGraph node/edge/conditional-transition diagrams, one per phase (component diagrams show *what exists*; these show *how it actually runs*, including every guardrail branch, human checkpoint, and the Phase 2 sufficiency-check gate).
+- **`docs/architecture/lfi-workflow-phase{1,2,3}-*-v1.html`** — the actual LangGraph node/edge/conditional-transition diagrams, one per phase (component diagrams show *what exists*; these show *how it actually runs*, including every guardrail branch, human checkpoint, and the Phase 2 sufficiency-check gate).
 - **`docs/architecture/agent-specifications.md`** — per-agent contract: trigger, inputs, outputs, tools, model behavior rules (including the failure/retry/idempotency policy, ADR-0018), shared state, human checkpoints with SLAs, capacity/testing/threat-model summaries. Read this before implementing any agent.
 - **`docs/architecture/tool-contracts.md`** — one-page contract per tool (input/output schema, timeout, retry policy, and the "unavailable ≠ no result" distinction) — read this before writing any tool-calling code.
 - **`.scratch/architecture-review-2026-09-15.md`** — an independent staff-engineer-level production-readiness review. All 4 Critical, all 6 High, and 5 of 7 Medium/Low findings are now fixed (ADR-0017 through ADR-0025, the three workflow diagrams, `tool-contracts.md`) — only the two Low findings remain open (cost model, independent model-risk/compliance sign-off process), both organizational rather than architectural.
@@ -39,7 +39,7 @@ No build/implementation work has started. The next step is turning the settled d
 
 ## Regenerating a diagram
 
-All diagrams are built with the vendored `archify` skill. Architecture diagrams (`lfi-pipeline-v1`, `lfi-pipeline-deployment-v1`) use `diagram_type: "architecture"`; the LangGraph diagrams (`lfi-workflow-phase*`) use `diagram_type: "workflow"`:
+All diagrams are built with the vendored `archify` skill and named `<subject>-v1.<ext>` throughout. Architecture diagrams (`lfi-pipeline-v1`, `lfi-pipeline-deployment-v1`) use `diagram_type: "architecture"`; the LangGraph diagrams (`lfi-workflow-phase*-v1`) use `diagram_type: "workflow"`:
 
 ```bash
 cd .claude/skills/archify
