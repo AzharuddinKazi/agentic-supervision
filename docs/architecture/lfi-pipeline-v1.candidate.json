@@ -165,7 +165,7 @@
     {
       "id": "gap_analysis",
       "type": "messagebus",
-      "label": "Gap Analysis Agent",
+      "label": "Compliance Analyst",
       "sublabel": "citation-grounded",
       "tag": "LLM + tool calls",
       "pos": [
@@ -180,7 +180,7 @@
     {
       "id": "clarification_agent",
       "type": "backend",
-      "label": "Clarification & Meeting",
+      "label": "Meeting Facilitator",
       "sublabel": "questions + minutes → actions",
       "tag": "LLM, no tool calls",
       "pos": [
@@ -195,7 +195,7 @@
     {
       "id": "findings_reporting",
       "type": "messagebus",
-      "label": "Findings & Reporting",
+      "label": "Findings Author",
       "sublabel": "qual + quant → letter + deck",
       "tag": "LLM + tool calls",
       "pos": [
@@ -210,7 +210,7 @@
     {
       "id": "ag_preexit",
       "type": "cloud",
-      "label": "AG & Pre-Exit",
+      "label": "Approval Coordinator",
       "sublabel": "state tracker",
       "tag": "+ guarded LLM assist",
       "pos": [
@@ -458,7 +458,7 @@
         "Grey/external = a human step (meeting, call, decision) or an outside system — not automated by this pipeline",
         "Teal/backend = an LLM agent reasoning alone; peach/messagebus = an LLM agent that also calls tools",
         "Gold/cloud = a deterministic tool or rule-based service — no LLM involved at all; violet/database = a data store",
-        "In-Person Deep Dive's minutes feed Clarification & Meeting's post-meeting extraction (edge not drawn — crosses the data-source row; see agent-specifications.md)"
+        "In-Person Deep Dive's minutes feed Meeting Facilitator's post-meeting extraction (edge not drawn — crosses the data-source row; see agent-specifications.md)"
       ]
     },
     {

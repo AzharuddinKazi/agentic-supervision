@@ -8,7 +8,7 @@
   "lanes": [
     {
       "id": "system",
-      "label": "Gap Analysis Agent (LangGraph)"
+      "label": "Compliance Analyst (LangGraph)"
     },
     {
       "id": "exception",
@@ -81,7 +81,7 @@
       "lane": "system",
       "col": 1,
       "type": "backend",
-      "label": "Gap Analysis Agent",
+      "label": "Compliance Analyst",
       "sublabel": "per-clause ReAct loop",
       "tag": "auto-retries tool timeouts",
       "width": 132
@@ -187,7 +187,7 @@
       "dot": "rose",
       "title": "Guardrail contract (ADR-0004/0017)",
       "items": [
-        "Gap Analysis Agent retries Notice Corpus/EDM timeouts with backoff internally (ADR-0018) — a timeout is never treated as \"no matching clause\"; only a real absence of a grounded citation reaches Human Review Flags",
+        "Compliance Analyst retries Notice Corpus/EDM timeouts with backoff internally (ADR-0018) — a timeout is never treated as \"no matching clause\"; only a real absence of a grounded citation reaches Human Review Flags",
         "\"Human Review Flags\" merges two distinct logged reasons — insufficient_grounding (ADR-0004) and low-confidence supersession (decision 30) — both route to the same Examiner Dashboard queue but are logged distinctly in audit_log"
       ]
     },
@@ -195,14 +195,14 @@
       "dot": "cyan",
       "title": "Tool calls (not drawn — see agent-specifications.md)",
       "items": [
-        "Gap Analysis Agent calls notice_corpus.get_clause(), edm.query(), and supersession_graph.check() inside this node — full tool contracts, retry policy, and timeout values live in agent-specifications.md / ADR-0018, not duplicated here"
+        "Compliance Analyst calls notice_corpus.get_clause(), edm.query(), and supersession_graph.check() inside this node — full tool contracts, retry policy, and timeout values live in agent-specifications.md / ADR-0018, not duplicated here"
       ]
     },
     {
       "dot": "slate",
       "title": "How to read this diagram",
       "items": [
-        "Branch points (e.g. Gap Analysis's grounded/ungrounded split) are edge-labeled, not drawn as decision diamonds — archify's workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape",
+        "Branch points (e.g. Compliance Analyst's grounded/ungrounded split) are edge-labeled, not drawn as decision diamonds — archify's workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape",
         "Closest standard: a UML activity diagram without gateway notation. Human checkpoints use a dedicated lane, not a person-icon convention"
       ]
     }

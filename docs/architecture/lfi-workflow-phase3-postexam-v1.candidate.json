@@ -6,7 +6,7 @@
     "quality_profile": "showcase"
   },
   "lanes": [
-    { "id": "system", "label": "Findings & Reporting / AG & Pre-Exit" },
+    { "id": "system", "label": "Findings Author / Approval Coordinator" },
     { "id": "human", "label": "Examiner Dashboard (Human)" },
     { "id": "external", "label": "AG / LFI (Outside Pipeline)" }
   ],
@@ -18,7 +18,7 @@
   "mainPath": ["findings_trigger", "draft_findings", "findings_signoff", "ag_showcase", "preexit_meeting"],
   "nodes": [
     { "id": "findings_trigger", "lane": "system", "col": 0, "type": "external", "label": "Phase 2 Complete", "sublabel": "sufficiency confirmed", "width": 132 },
-    { "id": "draft_findings", "lane": "system", "col": 1, "type": "backend", "label": "Findings & Reporting", "sublabel": "qual + quant tracks", "tag": "Findings Author", "width": 132 },
+    { "id": "draft_findings", "lane": "system", "col": 1, "type": "backend", "label": "Findings Author", "sublabel": "qual + quant tracks", "tag": "Findings & Reporting", "width": 132 },
     { "id": "findings_signoff", "lane": "human", "col": 2, "type": "frontend", "label": "Findings Sign-off", "sublabel": "severity validated (ADR-0017)", "width": 132 },
     { "id": "ag_showcase", "lane": "external", "col": 3, "type": "external", "label": "AG Showcase", "sublabel": "outside pipeline", "width": 132 },
     { "id": "ag_feedback_review", "lane": "human", "col": 4, "type": "frontend", "label": "AG Feedback Review", "sublabel": "NEW — human-gated", "tag": "fixes ADR-0017 gap", "width": 132 },
@@ -32,7 +32,7 @@
     { "id": "showcase-changes", "from": "ag_showcase", "to": "ag_feedback_review", "label": "changes requested", "variant": "security", "role": "branch" }
   ],
   "cards": [
-    { "dot": "rose", "title": "Fixes from Critical Finding #1 (ADR-0017)", "items": ["AG feedback surfaces here first, with its own interrupt() — never passed straight to Findings & Reporting as a redraft trigger; redraft loop not drawn", "Persisted severity must equal rubric.lookup()'s return value, enforced in code", "Pre-exit concerns → exit deck, loops back; no concerns → exit meeting (terminal)"] },
+    { "dot": "rose", "title": "Fixes from Critical Finding #1 (ADR-0017)", "items": ["AG feedback surfaces here first, with its own interrupt() — never passed straight to Findings Author as a redraft trigger; redraft loop not drawn", "Persisted severity must equal rubric.lookup()'s return value, enforced in code", "Pre-exit concerns → exit deck, loops back; no concerns → exit meeting (terminal)"] },
     { "dot": "slate", "title": "How to read this diagram", "items": ["Branch points (e.g. AG showcase's approved/changes-requested split) are edge-labeled, not drawn as decision diamonds — archify's workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape", "Closest standard: a UML activity diagram without gateway notation. Human checkpoints use a dedicated lane, not a person-icon convention", "external lane covers two things sharing one color — genuinely external meetings (AG Showcase, Pre-Exit) and internal state-machine trigger events (findings_trigger); lane placement disambiguates them"] }
   ]
 }

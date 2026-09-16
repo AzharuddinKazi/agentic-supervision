@@ -6,7 +6,7 @@
     "quality_profile": "showcase"
   },
   "lanes": [
-    { "id": "system", "label": "Clarification & Meeting Agent" },
+    { "id": "system", "label": "Meeting Facilitator" },
     { "id": "human", "label": "Examiner Dashboard (Human)" },
     { "id": "exception", "label": "Loop State", "variant": "exception" }
   ],

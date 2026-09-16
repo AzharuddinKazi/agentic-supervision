@@ -123,8 +123,8 @@
     {
       "id": "gap_analysis",
       "type": "messagebus",
-      "label": "Gap Analysis Agent",
-      "sublabel": "Compliance Analyst",
+      "label": "Compliance Analyst",
+      "sublabel": "Gap Analysis",
       "tag": "citation-grounded",
       "pos": [
         540,
@@ -138,8 +138,8 @@
     {
       "id": "clarification_agent",
       "type": "backend",
-      "label": "Clarification & Meeting",
-      "sublabel": "Meeting Facilitator",
+      "label": "Meeting Facilitator",
+      "sublabel": "Clarification & Meeting",
       "tag": "Qs + minutes → actions",
       "pos": [
         700,
@@ -153,8 +153,8 @@
     {
       "id": "findings_reporting",
       "type": "messagebus",
-      "label": "Findings & Reporting",
-      "sublabel": "Findings Author",
+      "label": "Findings Author",
+      "sublabel": "Findings & Reporting",
       "tag": "qual + quant → letter + deck",
       "pos": [
         880,
@@ -168,8 +168,8 @@
     {
       "id": "ag_preexit",
       "type": "cloud",
-      "label": "AG & Pre-Exit",
-      "sublabel": "Approval Coordinator",
+      "label": "Approval Coordinator",
+      "sublabel": "AG & Pre-Exit",
       "tag": "showcase → revise loop",
       "pos": [
         1060,

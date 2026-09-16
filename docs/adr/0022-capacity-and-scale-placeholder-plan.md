@@ -19,7 +19,7 @@ Oracle storage/IOPS  ≈  (annual examination count)
 
 **Placeholder inputs (illustrative only, not sourced from FPSD's real workload — replace before procurement):**
 - Peak concurrent examinations: **8** (rough guess — a mid-size supervisory department running staggered 30-day RFI windows across a bank population).
-- Gap Analysis Agent's ReAct loop runs once per RFI question/clause pair (`agent-specifications.md`); assume ~40 RFI questions per examination → up to ~320 concurrent per-clause LLM calls at peak, though these queue rather than all firing simultaneously.
+- Compliance Analyst's ReAct loop runs once per RFI question/clause pair (`agent-specifications.md`); assume ~40 RFI questions per examination → up to ~320 concurrent per-clause LLM calls at peak, though these queue rather than all firing simultaneously.
 - Avg tokens per clause-verdict call: ~2,000 (prompt + completion) — this depends heavily on which model (Qwen Coder vs. gpt-oss-120b, decision 49) is actually selected; both are named as candidates but neither is committed to, so this number moves once that's decided.
 - Target p95 latency: a few seconds per clause-verdict call is likely acceptable given the human review step immediately downstream — no hard SLA has been set by the examiner team yet.
 - Resulting placeholder: **2-4 GPUs** for the LLM Inference Service at this scale, **revisit once real concurrency and model choice are known.**

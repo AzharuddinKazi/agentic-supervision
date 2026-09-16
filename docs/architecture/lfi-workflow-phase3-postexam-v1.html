@@ -5157,7 +5157,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
         <!-- Swimlanes -->
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-0" x="40" y="52" width="788" height="106" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / Findings &amp; Reporting / AG &amp; Pre-Exit</text>
+        <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / Findings Author / Approval Coordinator</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="178" width="788" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="200" class="t-dim" font-size="10" font-weight="600">02 / Examiner Dashboard (Human)</text>
@@ -5187,8 +5187,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <path data-edge-from="findings_trigger" data-edge-to="draft_findings" data-edge-key="4" data-edge-id="trigger-draft" data-composition-points="180,120;208,120" d="M 180 120 L 208 120" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
 
         <!-- Nodes -->
-        <g id="node-findings_trigger" data-node-id="findings_trigger" data-node-label="Phase 2 Complete" tabindex="0" role="button" aria-label="Focus Phase 2 Complete, sufficiency confirmed, Findings &amp; Reporting / AG &amp; Pre-Exit › Draft findings" aria-pressed="false" data-node-kind="external" data-node-sublabel="sufficiency confirmed" data-node-context="Findings &amp; Reporting / AG &amp; Pre-Exit › Draft findings">
-          <title>Phase 2 Complete · sufficiency confirmed · Findings &amp; Reporting / AG &amp; Pre-Exit › Draft findings</title>
+        <g id="node-findings_trigger" data-node-id="findings_trigger" data-node-label="Phase 2 Complete" tabindex="0" role="button" aria-label="Focus Phase 2 Complete, sufficiency confirmed, Findings Author / Approval Coordinator › Draft findings" aria-pressed="false" data-node-kind="external" data-node-sublabel="sufficiency confirmed" data-node-context="Findings Author / Approval Coordinator › Draft findings">
+          <title>Phase 2 Complete · sufficiency confirmed · Findings Author / Approval Coordinator › Draft findings</title>
           <rect x="48" y="94" width="132" height="52" rx="6" class="c-mask"/>
           <rect x="48" y="94" width="132" height="52" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(54 100) scale(0.6875)">
@@ -5199,16 +5199,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <text data-detail="context" x="114" y="132" class="t-muted" font-size="8" text-anchor="middle">sufficiency confirmed</text>
         </g>
 
-        <g id="node-draft_findings" data-node-id="draft_findings" data-node-label="Findings &amp; Reporting" tabindex="0" role="button" aria-label="Focus Findings &amp; Reporting, qual + quant tracks, Findings &amp; Reporting / AG &amp; Pre-Exit › Draft findings" aria-pressed="false" data-node-kind="backend" data-node-sublabel="qual + quant tracks" data-node-tag="Findings Author" data-node-context="Findings &amp; Reporting / AG &amp; Pre-Exit › Draft findings">
-          <title>Findings &amp; Reporting · qual + quant tracks · Findings &amp; Reporting / AG &amp; Pre-Exit › Draft findings · Findings Author</title>
+        <g id="node-draft_findings" data-node-id="draft_findings" data-node-label="Findings Author" tabindex="0" role="button" aria-label="Focus Findings Author, qual + quant tracks, Findings Author / Approval Coordinator › Draft findings" aria-pressed="false" data-node-kind="backend" data-node-sublabel="qual + quant tracks" data-node-tag="Findings &amp; Reporting" data-node-context="Findings Author / Approval Coordinator › Draft findings">
+          <title>Findings Author · qual + quant tracks · Findings Author / Approval Coordinator › Draft findings · Findings &amp; Reporting</title>
           <rect x="208" y="86" width="132" height="68" rx="6" class="c-mask"/>
           <rect x="208" y="86" width="132" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(214 92) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="274" y="107" class="t-primary" font-size="10.3" font-weight="600" text-anchor="middle">Findings &amp; Reporting</text>
+          <text data-node-label="" data-detail-anchor="" x="274" y="107" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Findings Author</text>
           <text data-detail="context" x="274" y="124" class="t-muted" font-size="8" text-anchor="middle">qual + quant tracks</text>
-        <text data-detail="fine" x="274" y="142" class="t-backend" font-size="7" text-anchor="middle">Findings Author</text>
+        <text data-detail="fine" x="274" y="142" class="t-backend" font-size="7" text-anchor="middle">Findings &amp; Reporting</text>
         </g>
 
         <g id="node-findings_signoff" data-node-id="findings_signoff" data-node-label="Findings Sign-off" tabindex="0" role="button" aria-label="Focus Findings Sign-off, severity validated (ADR-0017), Examiner Dashboard (Human) › Sign-off" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="severity validated (ADR-0017)" data-node-context="Examiner Dashboard (Human) › Sign-off">
@@ -5491,7 +5491,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <h3>Fixes from Critical Finding #1 (ADR-0017)</h3>
         </div>
         <ul>
-          <li>&bull; AG feedback surfaces here first, with its own interrupt() — never passed straight to Findings &amp; Reporting as a redraft trigger; redraft loop not drawn</li>
+          <li>&bull; AG feedback surfaces here first, with its own interrupt() — never passed straight to Findings Author as a redraft trigger; redraft loop not drawn</li>
           <li>&bull; Persisted severity must equal rubric.lookup()&#39;s return value, enforced in code</li>
           <li>&bull; Pre-exit concerns → exit deck, loops back; no concerns → exit meeting (terminal)</li>
         </ul>

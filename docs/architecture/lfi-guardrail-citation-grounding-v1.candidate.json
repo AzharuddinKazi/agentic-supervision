@@ -17,7 +17,7 @@
     }
   },
   "participants": [
-    { "id": "gap_analysis", "type": "messagebus", "label": "Gap Analysis Agent", "sublabel": "Compliance Analyst" },
+    { "id": "gap_analysis", "type": "messagebus", "label": "Compliance Analyst", "sublabel": "Gap Analysis" },
     { "id": "notice_corpus", "type": "database", "label": "Notice Corpus", "sublabel": "Fraud DB" },
     { "id": "supersession", "type": "cloud", "label": "Supersession Graph", "sublabel": "deterministic" },
     { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only" },
@@ -76,7 +76,7 @@
       "dot": "slate",
       "title": "Diagram scope",
       "items": [
-        "Covers only the citation-grounding call sequence inside Gap Analysis Agent's ReAct loop, one clause at a time — the surrounding per-question loop and low-confidence-supersession routing to needs_human_review are drawn in lfi-workflow-phase1-preexam-v1.html, not repeated here",
+        "Covers only the citation-grounding call sequence inside Compliance Analyst's ReAct loop, one clause at a time — the surrounding per-question loop and low-confidence-supersession routing to needs_human_review are drawn in lfi-workflow-phase1-preexam-v1.html, not repeated here",
         "Closest standard: a UML sequence diagram — archify's sequence type supports activations/lifelines/return messages natively, so this maps cleanly with no notation gap"
       ]
     }

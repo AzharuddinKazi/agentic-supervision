@@ -13,17 +13,17 @@ All agents read and write a single LangGraph state object, scoped per examinatio
 | Field | Written by | Read by |
 |---|---|---|
 | `schema_version` (integer, ADR-0025) | set at state creation; bumped only by a tested migration | every agent, before reading any other field |
-| `rfi_responses[]` | Intake Tracker | Gap Analysis Agent |
+| `rfi_responses[]` | Intake Tracker | Compliance Analyst |
 | `intake_status` (per RFI question: submitted / pending / suspicious) | Intake Tracker | Examiner Dashboard |
-| `compliance_verdicts[]` | Gap Analysis Agent | Examiner Dashboard, Clarification & Meeting Agent |
-| `supervision_questions[]` | Gap Analysis Agent, Clarification & Meeting Agent | Examiner Dashboard, Audit Trail |
-| `meeting_minutes` (raw text) | Examiner Dashboard (human input) | Clarification & Meeting Agent |
-| `further_submission_requests[]` | Clarification & Meeting Agent | Intake Tracker (next cycle) |
-| `meeting_followup_status` (sufficient / insufficient) | Clarification & Meeting Agent, via Lead/Approver sufficiency check | Findings & Reporting Agent (its actual trigger condition), Examiner Dashboard |
-| `findings[]` (severity, deadline, `rubric_version`, citations) | Findings & Reporting Agent | Examiner Dashboard, AG & Pre-Exit Agent |
-| `transmittal_letter_draft`, `pre_exit_deck_draft` | Findings & Reporting Agent | AG & Pre-Exit Agent |
-| `ag_status` (drafted / awaiting_ag / changes_requested / ag_feedback_reviewed / approved) | AG & Pre-Exit Agent | Examiner Dashboard |
-| `preexit_status` (scheduled / concerns_raised / resolved / proceeded_to_exit) | AG & Pre-Exit Agent | Examiner Dashboard |
+| `compliance_verdicts[]` | Compliance Analyst | Examiner Dashboard, Meeting Facilitator |
+| `supervision_questions[]` | Compliance Analyst, Meeting Facilitator | Examiner Dashboard, Audit Trail |
+| `meeting_minutes` (raw text) | Examiner Dashboard (human input) | Meeting Facilitator |
+| `further_submission_requests[]` | Meeting Facilitator | Intake Tracker (next cycle) |
+| `meeting_followup_status` (sufficient / insufficient) | Meeting Facilitator, via Lead/Approver sufficiency check | Findings Author (its actual trigger condition), Examiner Dashboard |
+| `findings[]` (severity, deadline, `rubric_version`, citations) | Findings Author | Examiner Dashboard, Approval Coordinator |
+| `transmittal_letter_draft`, `pre_exit_deck_draft` | Findings Author | Approval Coordinator |
+| `ag_status` (drafted / awaiting_ag / changes_requested / ag_feedback_reviewed / approved) | Approval Coordinator | Examiner Dashboard |
+| `preexit_status` (scheduled / concerns_raised / resolved / proceeded_to_exit) | Approval Coordinator | Examiner Dashboard |
 | `audit_log[]` (append-only) | every agent, on every state transition | Audit Trail Store |
 
 State is persisted to the Fraud Database (ADR-0012) after every node execution — this is what makes LangGraph's interrupt/resume (ADR-0001) durable across the 30-day RFI window and the days/weeks between examination phases. Any breaking change to this table's shape bumps `schema_version` and ships with a migration function tested against an in-flight checkpoint (ADR-0025) — a deploy must not assume no examination is mid-flight under an older schema.
@@ -41,7 +41,7 @@ State is persisted to the Fraud Database (ADR-0012) after every node execution �
 - **Tools**: `ingestion_adapter.list_documents(lfi_id)`, `ingestion_adapter.get_metadata(doc_id)` (size, filename, last-modified).
 - **Trigger for Gap Analysis**: fires the `all_submitted` event only when every RFI question's status is `submitted` (decision 39 — batch, not incremental).
 
-### Gap Analysis Agent
+### Compliance Analyst
 **Persona**: **Compliance Analyst** — meticulous, cites chapter and verse, and says "I can't confirm this" rather than guess. System-prompt framing should make refusal-to-guess feel like professional competence, not failure, since the grounding rule (below) depends on the model being comfortable abstaining.
 
 - **Trigger**: `all_submitted` event from Intake Tracker.
@@ -64,7 +64,7 @@ State is persisted to the Fraud Database (ADR-0012) after every node execution �
 
 ## Phase 2 — Examination (Onsite)
 
-### Clarification & Meeting Agent
+### Meeting Facilitator
 **Persona**: **Meeting Facilitator** — drafts sharp, specific questions an examiner could ask cold, and later reads meeting minutes the way a careful note-taker would: extracting commitments, not paraphrasing small talk.
 
 Two distinct responsibilities, both owned by this node (decision 25):
@@ -85,12 +85,12 @@ Two distinct responsibilities, both owned by this node (decision 25):
 `current_state.png`'s Phase 2 shows an explicit, iterative "documents/answers sufficient?" loop that earlier drafts of this spec left unmodeled, treating post-meeting extraction as one-shot with an undefined "further-submission loop resolved" condition. This is now a real, named gate (`lfi-workflow-phase2-meeting-v1.html`'s "Sufficiency Check" node):
 - **Trigger**: `further_submission_requests[]` outcomes received back through Intake Tracker's next cycle.
 - **Decision maker**: **Lead/Approver, not the LLM** (ADR-0003's augmentation principle — this is a judgment call about whether the LFI's response actually closes the gap, not an extraction task).
-- **Outputs**: `meeting_followup_status` (`sufficient` / `insufficient`). `insufficient` re-enters Phase 1's Intake Tracker via the same `all_submitted` trigger for another document-collection round; `sufficient` is the condition that actually satisfies Findings & Reporting Agent's trigger below — "further-submission loop resolved" now means exactly this state value, not a prose assumption.
+- **Outputs**: `meeting_followup_status` (`sufficient` / `insufficient`). `insufficient` re-enters Phase 1's Intake Tracker via the same `all_submitted` trigger for another document-collection round; `sufficient` is the condition that actually satisfies Findings Author's trigger below — "further-submission loop resolved" now means exactly this state value, not a prose assumption.
 
-### Findings & Reporting Agent
+### Findings Author
 **Persona**: **Findings Author** — writes for a reader (the Assistant Governor, then LFI leadership) who wasn't in the room: every finding stands on its own, with severity and citation, no institutional memory assumed.
 
-- **Trigger**: `meeting_followup_status == sufficient` (the Clarification & Meeting Agent's sufficiency check, above — not an assumed "resolved").
+- **Trigger**: `meeting_followup_status == sufficient` (the Meeting Facilitator's sufficiency check, above — not an assumed "resolved").
 - **Inputs**: `compliance_verdicts[]`, `further_submission_requests[]` outcomes, EDM (for quantitative track).
 - **Outputs**: `findings[]` split into two parallel analysis tracks (ADR-0011):
   - **Qualitative**: notice/clause compliance narrative — carries forward each finding's grounding citation.
@@ -102,21 +102,21 @@ Two distinct responsibilities, both owned by this node (decision 25):
   - **(ADR-0021)** No quantitative finding may be persisted with a number that is not traceable to a specific `quant_analysis.compute()` return value — same enforcement pattern as the severity guardrail.
 - **Human checkpoint**: **required sign-off** on findings/severity before the transmittal letter is drafted (decision 1, decision 26). `interrupt()` here.
 
-### AG & Pre-Exit Agent
+### Approval Coordinator
 **Persona**: **Approval Coordinator** — a state-tracker, not a persuader; it never drafts arguments to win over the AG or the LFI, it only tracks what was asked for and routes redrafts. Where an LLM is involved (summarizing feedback into redraft notes), it stays strictly descriptive.
 
 Two loops, both routine state (ADR-0010 — this is the node that most differs from the original design, so read ADR-0010 before touching it):
 
 **(a) AG review loop**
 - **Trigger**: signed-off `transmittal_letter_draft` + `pre_exit_deck_draft`.
-- **State transitions**: `drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → (back to Findings & Reporting for redraft) → awaiting_ag → approved`.
+- **State transitions**: `drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → (back to Findings Author for redraft) → awaiting_ag → approved`.
 - **Outputs**: `ag_status`. The actual AG showcase meeting happens outside the pipeline (human process); this agent tracks state and, on `changes_requested`, produces a summarized redraft-notes artifact.
 - **No LLM call required for the state machine itself** — this is a status tracker with a human-reported outcome (approved / changes requested), logged to the audit trail.
-- **Guardrail (ADR-0017 — fixes Critical Finding #1)**: an LLM may assist in summarizing AG feedback into redraft notes, but that summary is **never passed directly to Findings & Reporting as a redraft trigger**. It surfaces first as its own reviewable artifact behind its own `interrupt()` — "AG Feedback Review" in `lfi-workflow-phase3-postexam-v1.html` — and only Lead/Approver confirmation of that summary advances the state to `ag_feedback_reviewed` and triggers the redraft. This closes the gap where an ungrounded AI-summarized instruction could otherwise change a regulatory document based on something no human actually said.
+- **Guardrail (ADR-0017 — fixes Critical Finding #1)**: an LLM may assist in summarizing AG feedback into redraft notes, but that summary is **never passed directly to Findings Author as a redraft trigger**. It surfaces first as its own reviewable artifact behind its own `interrupt()` — "AG Feedback Review" in `lfi-workflow-phase3-postexam-v1.html` — and only Lead/Approver confirmation of that summary advances the state to `ag_feedback_reviewed` and triggers the redraft. This closes the gap where an ungrounded AI-summarized instruction could otherwise change a regulatory document based on something no human actually said.
 
 **(b) Pre-exit loop**
 - **Trigger**: `ag_status == approved`.
-- **State transitions**: `scheduled → concerns_raised → (letter/deck updated by Findings & Reporting) → resolved → proceeded_to_exit`, or `scheduled → proceeded_to_exit` directly if the LFI raises no concerns.
+- **State transitions**: `scheduled → concerns_raised → (letter/deck updated by Findings Author) → resolved → proceeded_to_exit`, or `scheduled → proceeded_to_exit` directly if the LFI raises no concerns.
 - **Outputs**: `preexit_status`, and — when concerns are raised — the updated letter/deck becomes the **exit deck** (CONTEXT.md).
 
 ---
@@ -137,13 +137,13 @@ Every checkpoint below is a LangGraph `interrupt()` that only a Lead/Approver ca
 
 | Checkpoint | Raised by | Resolved by | What's being approved | Suggested SLA |
 |---|---|---|---|---|
-| Gap-analysis review | Gap Analysis Agent | Lead/Approver | `insufficient_grounding` / `needs_human_review` items before supervision questions are finalized | 2 business days |
-| Supervision-question sign-off | Clarification & Meeting Agent | Lead/Approver | Final question list before the live meeting | Before the scheduled meeting (hard deadline, not a duration) |
-| Sufficiency check *(added — Critical Finding #3)* | Clarification & Meeting Agent | Lead/Approver | Whether further-submission responses actually close the meeting's gaps | 2 business days from further-submission receipt |
-| Findings/severity sign-off | Findings & Reporting Agent | Lead/Approver | Findings + severity before transmittal letter drafting | 3 business days |
-| AG review loop | AG & Pre-Exit Agent | Assistant Governor (outcome relayed by Lead/Approver) | Transmittal letter + pre-exit deck | No pipeline-enforced SLA — external process; track time-in-state for visibility only |
-| AG feedback review *(added — Critical Finding #1)* | AG & Pre-Exit Agent | Lead/Approver | The LLM-summarized AG feedback itself, before it can trigger a redraft | 1 business day (blocks the redraft cycle) |
-| Pre-exit concerns loop | AG & Pre-Exit Agent | Lead/Approver | Updated letter/deck after LFI raises concerns | 2 business days from concerns raised |
+| Gap-analysis review | Compliance Analyst | Lead/Approver | `insufficient_grounding` / `needs_human_review` items before supervision questions are finalized | 2 business days |
+| Supervision-question sign-off | Meeting Facilitator | Lead/Approver | Final question list before the live meeting | Before the scheduled meeting (hard deadline, not a duration) |
+| Sufficiency check *(added — Critical Finding #3)* | Meeting Facilitator | Lead/Approver | Whether further-submission responses actually close the meeting's gaps | 2 business days from further-submission receipt |
+| Findings/severity sign-off | Findings Author | Lead/Approver | Findings + severity before transmittal letter drafting | 3 business days |
+| AG review loop | Approval Coordinator | Assistant Governor (outcome relayed by Lead/Approver) | Transmittal letter + pre-exit deck | No pipeline-enforced SLA — external process; track time-in-state for visibility only |
+| AG feedback review *(added — Critical Finding #1)* | Approval Coordinator | Lead/Approver | The LLM-summarized AG feedback itself, before it can trigger a redraft | 1 business day (blocks the redraft cycle) |
+| Pre-exit concerns loop | Approval Coordinator | Lead/Approver | Updated letter/deck after LFI raises concerns | 2 business days from concerns raised |
 
 SLA breaches and current backlog (count of unresolved checkpoints per type) surface on the Examiner Dashboard — this is what a Lead/Approver should see first, not something they have to query for.
 
@@ -171,12 +171,12 @@ Rate, Errors, Duration (RED method) via OpenTelemetry: invocation count, error r
 
 | Metric | Agent | What it catches |
 |---|---|---|
-| Citation-validity rate | Gap Analysis | % of verdicts whose cited clause ID machine-verifiably exists in Notice Corpus and matches the quoted text — automatable, gate CI/regression tests on this before any model or prompt change ships |
-| Insufficient-grounding rate | Gap Analysis | Trending up = corpus gap or model regression; trending down over time = corpus maturing. A sudden spike after a model swap (decision 49 — model stays swappable) is the first thing to check |
+| Citation-validity rate | Compliance Analyst | % of verdicts whose cited clause ID machine-verifiably exists in Notice Corpus and matches the quoted text — automatable, gate CI/regression tests on this before any model or prompt change ships |
+| Insufficient-grounding rate | Compliance Analyst | Trending up = corpus gap or model regression; trending down over time = corpus maturing. A sudden spike after a model swap (decision 49 — model stays swappable) is the first thing to check |
 | Human-agreement rate | All (per checkpoint in the HITL table) | **The primary trust metric.** Falling = quality regression. Near-100% = investigate for automation bias (decision 1's augmentation model depends on real review happening) |
 | Override/edit rate, by reason if captured | All | Inverse of agreement rate; bucket by reason to find systematic weak spots (e.g., always over-escalating one clause type) |
-| Supersession auto-resolve vs. escalate ratio | Gap Analysis | Tunes the confidence threshold (decision 30) against real cases rather than guessing |
-| Revision-loop iteration count | AG & Pre-Exit | Proxy for draft quality — repeated `changes_requested` cycles on the same letter is a signal, not just noise |
+| Supersession auto-resolve vs. escalate ratio | Compliance Analyst | Tunes the confidence threshold (decision 30) against real cases rather than guessing |
+| Revision-loop iteration count | Approval Coordinator | Proxy for draft quality — repeated `changes_requested` cycles on the same letter is a signal, not just noise |
 
 ### How evaluation actually runs
 Offline: a golden eval set (real, anonymized past examinations) re-run in CI before any prompt or model change ships — citation-validity and a small human-graded sample are the release gate. Online: production traces sampled into Langfuse for human spot-check scoring, plus the always-on automated citation-verifier. Both write scores to the same trace, so a regression can be traced back to a specific prompt/model version.
@@ -193,7 +193,7 @@ The golden eval set above gates citation quality; it catches nothing about the g
 
 ## Capacity (ADR-0022, placeholder)
 
-No real FPSD usage data exists yet — treat every number here as illustrative, revisit once the examiner team's actual annual examination count and concurrency are known (same "tune empirically" treatment as decision 30's supersession threshold). Rough placeholder: ~8 peak-concurrent examinations, ~40 RFI questions each driving Gap Analysis Agent's per-clause ReAct loop, pointing to a 2-4 GPU placeholder for the LLM Inference Service — moves once the model choice (decision 49: Qwen Coder vs. gpt-oss-120b, neither committed) and real concurrency are known. Full methodology in ADR-0022.
+No real FPSD usage data exists yet — treat every number here as illustrative, revisit once the examiner team's actual annual examination count and concurrency are known (same "tune empirically" treatment as decision 30's supersession threshold). Rough placeholder: ~8 peak-concurrent examinations, ~40 RFI questions each driving Compliance Analyst's per-clause ReAct loop, pointing to a 2-4 GPU placeholder for the LLM Inference Service — moves once the model choice (decision 49: Qwen Coder vs. gpt-oss-120b, neither committed) and real concurrency are known. Full methodology in ADR-0022.
 
 ## Threat model and network isolation (ADR-0019)
 
