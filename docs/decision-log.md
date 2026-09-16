@@ -1,0 +1,241 @@
+# Decision Log — Questions Asked & Decisions Made
+
+This is the durable, committed record of every question raised and decision made while designing the LFI Examination Pipeline — companion to `CONTEXT.md` (the distilled glossary) and `docs/adr/` (the distilled architectural decisions). Where `CONTEXT.md`/ADRs give you the settled *what*, this document gives you the *why*, in the order it was actually decided, including what was asked, what was considered, and what was rejected.
+
+**Purpose**: so a question already settled here doesn't get silently re-litigated later. Before reopening something that looks settled, check here first — if new information genuinely changes the answer, the convention is to add a new round below (never edit history) and, where the decision is architecturally load-bearing, write a new ADR that explicitly supersedes/amends the old one.
+
+**Relationship to other docs**:
+- `CONTEXT.md` — canonical vocabulary, kept current, no history.
+- `docs/adr/0001`–`0028` — one decision per file, terse, the thing to cite in code/design reviews.
+- `.scratch/lfi-examination-pipeline/design-grill.md` — the original raw working log this document is distilled from (gitignored, not part of the shipped repo — this file is now the canonical, committed copy going forward).
+- This file — the full narrative: every question, every round, every decision, in order, cross-referenced to ADRs.
+
+Decisions are numbered sequentially (1–80) and never renumbered; a decision that's later reversed or amended says so explicitly and points at the decision that changed it, rather than being edited away.
+
+---
+
+## Original brief (verbatim)
+
+FPSD (Fraud Prevention and Supervision Department) at CBUAE runs regular examinations of Licensed Financial Institutions (LFIs) for compliance against fraud, consumer protection, and market conduct standards. Three phases:
+
+1. **Pre-examination**: RFIs (15-20 questions, each tagged to a specific notice/standard/clause) sent to LFI 30 days before start. LFI uploads documents (tables, flowcharts, screenshots, text) into a shared workspace, structured by RFI question, over the 30-day window. Team must track submitted vs pending before examination can start. Team then manually reviews every document against the cited notices/standards (tedious, error-prone), also cross-referencing quarterly fraud data submissions pulled from an EDM. Team drafts clarification questions for gaps/non-compliance.
+2. **Examination meeting**: team asks clarification questions live. Meeting notes/minutes analyzed afterward for any further required submissions, which LFI submits via the same shared workspace mechanism.
+3. **Post-examination**: findings finalized and validated → transmittal letter drafted (each finding gets severity High/Medium/Low + deadline) → pre-exit presentation deck drafted → both go to Assistant Governor for approval → presented to LFI leadership as pre-exit. Findings are very rarely revised at this stage; if they are, transmittal letter + deck are updated and re-shared as the **exit deck**.
+
+Goal: convert this workflow into a multi-agent pipeline.
+
+---
+
+## Rounds 1–2 — foundational scope and constraints
+
+**Question asked**: given the brief above, what are the automation philosophy, the deployment constraints, the source-system facts, and the hard regulatory rules this pipeline must respect?
+
+1. **Automation philosophy**: Augmentation/co-pilot, not full autonomy. Human sign-off required at: (a) final list of clarification questions before the examination meeting, (b) final findings/severity before the transmittal letter, (c) before anything goes to the Assistant Governor. *(Later formalized as ADR-0003.)*
+2. **Deployment/data constraints**: Must run in an approved/sandboxed enterprise environment (private cloud or on-prem LLM deployment) — LFI examination data is sensitive supervisory data. Hard constraint, assumed for design purposes pending IT/compliance confirmation.
+3. **Source systems**: Shared workspace (LFI document uploads) — originally assumed no API/SFTP access, **superseded by decision 14** (SFTP is in fact enabled). EDM (quarterly fraud data) — Oracle, has an API, not a blocker.
+4. **Citation requirement**: Any compliance verdict must cite the **exact notice and exact sentence verbatim** — no paraphrasing as if it were a quote. **Hard rule: no grounded citation → no compliance verdict.** If the agent can't find a high-confidence exact match, it outputs "insufficient grounding, needs human review" instead of guessing. *(Later formalized as ADR-0004 — the single most load-bearing rule in the whole design; see also decisions 56, 78.)*
+5. **Cross-notice supersession**: Some notice clauses supersede clauses in other notices under certain conditions — a real dependency graph the pipeline must model. Agent drafts an initial supersession table from the notice corpus; only truly complex/high-uncertainty relationships route to human review. Escalation threshold mechanism settled in decision 30.
+6. **Notice corpus readiness**: Mostly digitized PDFs; some older notices may be scanned images. OCR must be a supported feature, confirmed per-notice rather than assumed uniformly one way.
+7. **Rollout scope for v1**: Originally narrowed to pre-exam intake tracking + gap analysis only — **reversed by decision 22**: v1 is a lean, bare-minimum, end-to-end pipeline covering all three phases.
+8. **Agent orchestration tooling**: **LangGraph** — chosen for granular control, fits well with human-in-the-loop interrupt/checkpoint needs from decision 1. *(Later formalized as ADR-0001.)*
+9. **Output deliverable formats**: RFI, transmittal letter, pre-exit deck, exit deck all follow fixed existing Word/PPT templates — agent fills them in, does not design new layouts from scratch.
+10. **RFI-to-notice mapping**: Already exists — each RFI question is tagged with its corresponding notice/standard/law in the RFI itself. A given input, not something the pipeline needs to infer fresh each cycle.
+11. **Severity/deadline rubric**: Confirmed to exist as a standard rubric (severity → deadline). Encoding settled in decision 16.
+12. **Folder structure**: Fixed and standardized — follows the RFI's section/subsection structure, same for all LFIs of the same license type. This is what makes automated intake tracking tractable.
+13. **RFI question bank**: RFIs are standardized per LFI license type (not hand-written per LFI each cycle), reinforcing decision 12.
+
+## Round 3 — ingestion, rubric, and scope facts
+
+**Question asked**: follow-up facts needed to make decisions 1–13 buildable — is SFTP actually available, is the RFI machine-readable, how is the rubric encoded, what license types are in v1?
+
+14. **Ingestion mechanism confirmed**: Shared workspace has SFTP enabled — supersedes decision 3's "no API/SFTP access" assumption. Built as a pluggable adapter (list/fetch/get-last-modified interface); v1's concrete adapter is SFTP-based, a Smart-portal API adapter remains a future swap-in. *(Later formalized as ADR-0006.)*
+15. **RFI machine-readability**: RFI is a structured Excel sheet (Question ID, Question text, Notice reference, Clause reference) — no free-text extraction/re-keying step needed. *(Revisited in Round 15/decision 71 — the Excel format is the ingestion source, not the storage engine.)*
+16. **Severity/deadline rubric**: Directly coded as a lookup table, but must be modifiable from a UI (not a static config) — a small admin surface (CRUD on rubric entries). *(Revisited in Round 13/decision 61 — promoted to a shared, versioned platform service.)*
+17. **v1 license type scope**: Banks only, confirmed. SVFs and other license types deferred to v2+.
+18. **Definition of "submitted" (v1 scope)**: presence + non-empty + filename/format convention match only. Content/plausibility validation is a separate downstream agent, deferred to v2 (decision 28).
+19. **LFI-facing communication**: Confirmed as a real future feature (e.g., reminder emails), but explicitly out of v1 scope.
+20. **EDM cross-referencing dropped from v1**: EDM quarterly fraud data and LFI-submitted documents are non-overlapping datasets to a large extent — not enough overlap to justify document-vs-EDM consistency cross-checking in v1. *(Later formalized as ADR-0009.)*
+
+## Round 4 — EDM's real role, and a scope reversal
+
+**Question asked**: if EDM isn't used for cross-checking (decision 20), what *is* it for — and is the "intake + gap analysis only" v1 scope (decision 7) actually right?
+
+21. **EDM integration stays in v1.** Role: EDM (Oracle) supplies LFI quarterly fraud submissions. Not used for automated consistency cross-checking (decision 20 stands). Instead it (a) complements document evidence as separate context during gap analysis, and (b) is a guiding input for drafting follow-up/clarification questions.
+22. **⚠️ SCOPE REVERSAL of decision 7**: v1 is *not* limited to intake tracking + gap analysis. Transmittal letter drafting and pre-exit deck drafting are in v1 — v1 is a lean, bare-minimum, end-to-end pipeline covering all three phases. *(Cascading effect: decision 16's rubric-editing UI is back in v1 scope, since post-exam findings/severity assignment now needs it. Later formalized as ADR-0002.)*
+23. **SFTP adapter — operational status**: Not yet provisioned, requires an IT/security request. Folder structure: SFTP will 1:1 mirror the shared workspace's fixed per-license-type structure (decision 12) — no separate mapping/translation layer needed.
+24. **Content-validation agent scope**: Ambiguous pending Round 5 — resolved by decision 28.
+
+## Round 5 — meeting phase and post-exam bare minimum
+
+**Question asked**: given decision 22's scope reversal, what does "bare minimum" actually mean for the meeting phase and post-exam phase specifically?
+
+25. **Meeting-phase bare minimum**: Agent drafts the pre-meeting clarification-question list from gap-analysis + EDM output; post-meeting, it accepts human-provided meeting minutes/notes as text input and extracts further-submission action items. No audio/video transcription in v1.
+26. **Post-exam bare minimum**: Human sign-off checkpoint (decision 1) on findings/severity stays before transmittal-letter drafting — not skipped for "lean." Pre-exit deck is a derived artifact off the same findings data as the letter, not an independently-authored content path.
+27. **AG approval — status gate only**: Pipeline tracks "drafted → awaiting AG approval → approved" as state; actual approval routing/notification is a manual human action outside the pipeline. Exit-deck revision path (rare edge case) deferred, handled manually if/when triggered. *(⚠️ Both halves of this decision were later reversed — see decisions 37, 38.)*
+28. **Content-validation agent deferred to v2**: v1 ships presence/format checking only (decision 18); document-plausibility judgment stays a manual reviewer task for now.
+
+## Round 6 — notice corpus and supersession mechanics
+
+**Question asked**: how does the notice corpus actually get built and queried, and how does the supersession-escalation mechanism (decision 5) actually work?
+
+29. **Notice corpus ingestion is v1 scope**: One-time (then incrementally-updated) ingestion step — PDF → text (OCR per decision 6 where needed) → chunked/indexed with per-clause addressability. *(Later formalized as ADR-0005.)*
+30. **Supersession escalation**: Simple confidence-score cutoff for v1 (decision 5's threshold mechanism) — tunable later from real cases, no upfront complexity taxonomy needed. *(Revisited in Round 17/decision 78 — confirms the underlying storage architecture, doesn't change this threshold mechanism.)*
+31. **Human review UX**: Per-feature review surfaces are acceptable for v1 (no unified review queue) — each flagged-item type surfaces in its own feature context; consolidation deferred to v2.
+32. **Notice versioning**: v1 assumes current-version-only — no effective-dated historical clause versions. Explicitly flagged as a known v1 limitation. *(Revisited in Round 17/decision 78 — resolution path specified: structured relational columns, not a graph/RAG extension, when this is picked up.)*
+33. **UI surface**: One unified app confirmed — clarified further in decision 34.
+
+## Round 7 — UI scope, RBAC, and audit trail; frontier check
+
+**Question asked**: what does "comprehensive UI" actually mean, and does v1 need role-based access control and an audit trail?
+
+34. **"Comprehensive" UI clarified**: Means comprehensive *coverage of already-scoped touchpoints* — not additional feature scope beyond what's already decided. *(Later formalized as ADR-0008.)*
+35. **Team structure / access control**: Lightweight two-tier RBAC confirmed for v1 — examiner role (drafts, works the flow) vs. lead/approver role (signs off at decision-1 checkpoints). *(Revisited in Round 15/decision 69 — a third, read-only Auditor/Compliance Reviewer role added.)*
+36. **Audit trail is v1 scope**: Append-only log of agent-proposed vs. human-approved/overridden state at every sign-off checkpoint, built in from the start rather than retrofitted. *(Later formalized as ADR-0007.)*
+
+**Frontier check**: all previously identified branches had settled decisions (1–36). User confirmed the frontier was empty on 2026-09-15; domain-modeling capture followed (`CONTEXT.md`, ADR-0001 through 0009) and the v1 architecture diagram was built and delivered.
+
+## Round 8 — reconciling against the real current-state flowchart
+
+**Question asked**: the user uploaded a flowchart of the actual current-state process (three phases + Data Office/ITD constraints + proposed data layers). It's richer than the original verbal brief in places, and contradicted two settled decisions — does the design need to change?
+
+37. **⚠️ REVERSES part of decision 27**: The Phase-3 "LFI has concerns → update transmittal letter/deck → re-check → proceed to exit meeting" loop is **routine, not a rare edge case**. Now in v1 scope as a normal, modeled step. *(Later formalized as ADR-0010.)*
+38. **⚠️ REVERSES part of decision 27**: The AG-review step is not a flat status field — the real process has an explicit revision loop (Showcase → Changes? → back to Apply Comments → re-showcase). v1 must model "AG requested changes" as real pipeline state that routes back into findings/letter/deck drafting. *(Later formalized as ADR-0010.)*
+39. **Analysis timing confirmed as batch, not incremental**: Gap analysis is a single batch step triggered by complete intake, not a continuous per-document process during the 30-day window — formalizes what was already implicit.
+40. **Transmittal Letter spelling confirmed correct** — the diagram's "Transmitter Letter" is a typo; "Transmittal Letter" stands.
+41. **"Supervision Questions" adopted as the canonical term**, replacing "Clarification Question." "Clarification Question" becomes an alias to avoid in `CONTEXT.md`.
+42. **Qualitative vs. Quantitative Analysis** distinguished as two first-class tracks (Phase 2's "Analyze findings"). Does *not* reverse decision 20/ADR-0009 — quantitative analysis is EDM data analyzed on its own terms, not reconciled against documents. *(Later formalized as ADR-0011; quantitative track given a real compute tool in decision 62.)*
+43. **"Fraud Database" formalized as one umbrella data store**, containing Notice Corpus, Audit Trail Store, and gap-analysis/AI-generated output as logical sub-stores — conceptual separation in `CONTEXT.md`/diagrams stays, only the physical-storage framing changes. *(Later formalized as ADR-0012; extended in Round 15/decision 71 to explicitly include RFI Store as a fourth sub-store.)*
+
+Also confirmed (no reversal, detail added): CB Workspace is being delisted, replaced by an internally-built Smart Portal reachable via API or SFTP.
+
+## Round 9 — deployment-readiness facts
+
+**Question asked**: user asked for a detailed, deployment-ready solution architecture with agents defined — what are the real infra facts (hosting, identity, database engine)?
+
+44. **Deployment target: on-prem for now** (amended by decision 48). Originally "cloud-agnostic, not decided" — user then explicitly chose on-prem. Container-orchestration boundary stays generic (VMs vs. K8s/OpenShift still open).
+45. **LLM hosting: self-hosted open-weight model, in-tenant.** No third-party model API call. Specific model left open pending real hardware capacity — resolved to "known candidates, still swappable" in Round 10. *(Later formalized as ADR-0013.)*
+46. **Identity: federate to CBUAE's existing SSO** (Azure AD / on-prem AD) via OIDC/SAML — the Examiner/Lead-Approver RBAC roles (decision 35) are authorization claims on federated identity, not a new user store.
+47. **Fraud Database engine: Oracle**, matching EDM's existing engine — chosen for CBUAE's existing Oracle operational expertise over pure workload fit. *(Later formalized as ADR-0014.)*
+
+## Round 10 — on-prem confirmed, model candidates named
+
+**Question asked**: is the deployment target actually locked to on-prem, and what specific model(s) are realistically available?
+
+48. **Deployment target locked to on-prem** — not "cloud-agnostic, undecided" but an explicit choice, revisitable later. *(Formalized as ADR-0015.)*
+49. **Model/GPU treated as a black box** — agents built against a model-agnostic interface. IT has two candidates available on-prem — **Qwen Coder** and **gpt-oss-120b** — named but neither committed to; stays a "revisit later" decision, not a default.
+
+## Round 11 — observability, evaluation, audit, and HITL formalization
+
+**Question asked**: user asked for audit/monitoring, observability metrics, evaluation metrics, and formalized HITL checkpoints, recommending industry best practice. (Also: the deployment diagram had collapsed all 5 agents into one box — fixed first, personas moved from a hidden-by-default field to an always-visible one.)
+
+50. **Observability stack: OpenTelemetry + Prometheus/Grafana/Loki/Tempo** ("LGTM" stack) for infra-level traces/metrics/logs — RED method per service, USE method for the GPU-backed LLM Inference Service.
+51. **LLM-specific tracing and evaluation: self-hosted Langfuse** — captures every agent's prompt/completion/tokens/cost linked to its OTel trace, hosts both automated and human-annotated evals on the same trace.
+52. **Primary trust metric is human-agreement rate, not accuracy** — how often a Lead/Approver accepts an agent's draft unedited. A rate near 100% is flagged as an automation-bias risk, not a win.
+53. **Audit consumption stays query-based against the Fraud Database** — no new audit-reporting service; read-only queries/reports against `audit_log`. Entries hash-chained for tamper-evidence.
+54. **HITL checkpoints formalized as a table**: 5 checkpoints, each with a resolving role and a suggested SLA. `log_checkpoint()` records accept/edit/reject, not just resolved/unresolved. *(All four of 50–54 later formalized as ADR-0016; checkpoint table extended in Round 12/decisions 56–57 to 7 checkpoints.)*
+
+## Round 12 — independent architecture review + Critical-finding remediation
+
+**Question asked**: user asked for an independent senior-engineer-level review of the entire architecture, deliberately spun up as a fresh subagent (not a fork) to avoid the review being anchored to this session's own reasoning. Verdict (`.scratch/architecture-review-2026-09-15.md`): "every artifact stops at the decision layer and never reaches the contract layer" — 4 Critical, 6 High, 5 Medium, 2 Low findings. User chose to work through all 4 Critical findings first.
+
+55. **LangGraph state-machine diagrams built, one per phase** — fixes Critical Finding #2 (no node/edge/conditional-transition diagram existed). Split by phase because archify's workflow diagrams cap at 6 logical columns per lane.
+56. **Guardrail enforcement generalized into a pattern, not a one-off** (ADR-0017) — fixes Critical Finding #1. Findings Author's persisted `severity` must equal `severity_rubric.lookup()`'s actual return value, checked in code; AG-summarized feedback no longer feeds a redraft trigger directly, it surfaces first as its own reviewable artifact behind a new "AG Feedback Review" checkpoint.
+57. **Sufficiency-check gate added to Phase 2** — fixes Critical Finding #3. A real, human-judged gate between further-submission receipt and Findings Author's trigger — the same category of error ADR-0010 already caught once for the AG/pre-exit loops.
+58. **Failure, retry, and idempotency semantics defined** (ADR-0018) — fixes Critical Finding #4. Tool-call retry with backoff (tool-unavailable ≠ no-match), idempotency keys on state-mutating calls, optimistic concurrency on `interrupt()` resolution, schema-validation-with-repair on structured output.
+
+## Round 13 — all 6 High findings fixed
+
+**Question asked**: user said "lets go" to proceed straight through the review's High-severity findings.
+
+59. **Tool contracts written as real schemas** (`tool-contracts.md`) — every tool now has input/output schema (distinct error shape, never collapsed into "no result found"), timeout, retry policy.
+60. **Threat model + network isolation for the LLM Inference Service** (ADR-0019) — dedicated security-group boundary, mTLS-only access from the 4 LLM agents, encryption at rest on the Fraud Database, a new `secrets_manager` component.
+61. **`severity_rubric.lookup` promoted to a shared, versioned platform service** (ADR-0020) — every finding carries the `rubric_version` it was evaluated against; a redraft re-evaluates against the current version, with drift surfaced explicitly, not applied silently.
+62. **`quant_analysis.compute()` deterministic tool added** (ADR-0021) — quantitative arithmetic is now code, never the LLM computing directly from raw EDM figures in-context.
+63. **Capacity/scale placeholder plan** (ADR-0022) — explicit, illustrative-only GPU/storage numbers, marked for revisit once real FPSD usage data exists.
+64. **Testing, canary, and rollback strategy** (ADR-0023) — unit tests for tool error paths, a LangGraph integration suite, a canary process for model swaps, and an in-flight-examination pinning policy.
+
+## Round 14 — logical diagram redesigned for phase/role clarity
+
+**Question asked**: user asked to clearly mark the 3 phases, add human-performed steps as distinct nodes colored differently from automated ones, and explicitly separate "LLM agent," "LLM agent + tool call," and "deterministic tool" into different colors — aligned to the real current-state flowchart.
+
+65. **Phase boundary labels renamed to match the flowchart verbatim**: "Phase 1: Sending out the RFIs", "Phase 2: Examination Phase (Onsite)", "Phase 3: Pre-Exit Phase."
+66. **Human-performed steps added as first-class nodes**: LFI Kickoff Comms, In-Person Deep Dive, AG Showcase + Pre-Exit — marked as human, not modeled as pipeline state.
+67. **Component color now encodes automation role, not just architecture layer** — a custom legend remaps archify's fixed component-type colors: grey = human/external, teal = LLM-reasoning-only, peach = LLM+tool, gold = deterministic, violet = data store, blue = human-facing UI. Disclosed limitation: gold/peach are close in hue.
+68. **Per-phase background tinting from the flowchart was not replicated** — archify's region boundary has no per-instance custom color; matched what the flowchart communicates (phase separation + labels), not its literal color choice.
+
+## Round 15 — all 5 Medium findings fixed (2026-09-16)
+
+**Question asked**: user said "yes, lets go" to proceed through the review's Medium-severity findings.
+
+69. **Data retention, lifecycle, and audit-access review** (ADR-0024) — Langfuse traces get bounded retention shorter than the Fraud Database's audit trail; a new read-only **Auditor/Compliance Reviewer** RBAC role added; voided examinations flagged, never physically deleted.
+70. **LangGraph state schema versioning** (ADR-0025) — explicit `schema_version` field on the state object; any breaking change requires a tested migration function before shipping.
+71. **RFI Store confirmed as the Fraud Database's fourth logical sub-store** (extends ADR-0012) — decision 15's "structured Excel sheet" was the ingestion source format, not the storage engine.
+72. **`emerald` card-dot color now reserved exclusively for "deferred/out of scope"** across both architecture diagrams — no longer means opposite things in the two diagrams meant to be read together.
+73. **"5 agents" framing corrected to "4 LLM agents + 1 rule-based service"** everywhere — self-consistent with Intake Tracker's own "not an LLM" caveat.
+
+Only the review's 2 Low findings (cost model, independent model-risk/compliance sign-off process) remained open after this round — both organizational, not architectural.
+
+## Round 16 — diagram naming/notation audit + agent renaming (2026-09-16)
+
+**Question asked**: two separate requests. First, clear out unnecessary architecture files with clear naming/versioning. Second, audit the diagrams against industry-standard notation (C4/UML/BPMN), spun up as an independent solution-architect review (fresh agent, to avoid anchoring).
+
+74. **Diagram filenames standardized to `<subject>-v1.<ext>`** — no files were actually unused (all 5 pre-existing diagrams were live and referenced); the fix was naming consistency, since the 3 workflow diagrams lacked the `-v1` suffix the 2 architecture diagrams had.
+75. **Diagram notation review verdict: mostly sound given archify's actual grammar.** One real cross-diagram bug fixed — the deployment diagram's colors had silently reverted to default type semantics instead of carrying the logical diagram's automation-role legend, misleadingly coloring rule-based Intake Tracker the same as the real LLM agents; component types retyped to match actual automation role. Two cheap missing artifacts added: `lfi-pipeline-context-v1` (a real C4 Context diagram) and `lfi-guardrail-citation-grounding-v1` (a UML sequence diagram for the citation-grounding retry-vs-real-absence call flow). "How to read this diagram" notation footnotes added to the 3 workflow diagrams (archify's workflow grammar has no decision-diamond/fork-join primitive — a tool constraint, not sloppy authoring) and a scope caveat added to the deployment diagram (a "deployment & ownership view," not strict UML deployment).
+76. **Agents renamed to their professional persona titles** — user confirmed scope explicitly (headline/display names only, not internal ids): Gap Analysis Agent → **Compliance Analyst**, Clarification & Meeting → **Meeting Facilitator**, Findings & Reporting → **Findings Author**, AG & Pre-Exit → **Approval Coordinator**. All 4 persona names already existed in `agent-specifications.md`'s Persona lines — promoted to the reader-facing name everywhere, old functional name preserved in each diagram's sublabel/tag.
+
+**Incident worth remembering**: the rename was first delegated to a background fork; it ran 31 minutes with no completion notification (vs. 1.5–4.5 min for three parallel research forks in the same batch) — almost certainly stuck cycling on archify's label-width/desktop-readability validator, the same fiddly category of fix the main thread had already hit manually earlier in this project. User chose to abandon and redo directly; the fork was cleanly stopped, its one fully-correct completed file was kept (no worktree isolation, so nothing was lost), and the remainder finished directly. Lesson: don't delegate a task mixing mechanical text edits with archify diagram-validator loops to an unsupervised fork — the validator portion needs interactive judgment a fork can't escalate out of.
+
+## Round 17 — three decisions from user-directed research (2026-09-16)
+
+**Questions asked**: user raised five points in one message: (1) how do we evaluate whether an agent's work is "done," and should we borrow ideas from Google's DS-STAR paper (Planner/Verifier/Router) to add a Verifier agent; (2) professional agent naming (handled directly, see Round 16/decision 76); (3) explicitly define success/completion criteria at each step; (4) what's the best strategy for storing the notices/laws/standards agents cite against — RAG, a structured table, or a knowledge graph; (5) a separate sub-agent using web tools/MCP to enrich examinations with fraud news, consumer complaints, etc. Points 1/3/4/5 were routed to independent research forks (each given full project context) before being turned into ADRs.
+
+77. **No dedicated Verifier agent** (ADR-0026) — DS-STAR (confirmed: arXiv 2509.21825, Google Research, Sept 2025 — Planner/Coder/Verifier/Router, capped at 10 rounds) doesn't port cleanly: its Verifier judges a runnable, checkable artifact (code executed against data); this pipeline's outputs are human regulatory judgments by design (ADR-0003). A literal port — an LLM Verifier approving output and unblocking autonomous continuation — would conflict with augmentation-not-autonomy directly. Decision: the existing code guardrails (ADR-0017/0020/0021) plus HITL checkpoints already implement the same underlying idea, better-fitted to a domain where the real arbiter must stay human. A narrow, flag-only draft-completeness pre-check before Findings Author's sign-off is left as a future option, not built.
+78. **Explicit per-agent "definition of done"** added to `agent-specifications.md` (part of ADR-0026) — concrete, checkable completion predicates per agent, distilled from guardrails/state fields that already existed but were scattered across several ADRs and the shared-state table.
+79. **Notice/clause corpus storage strategy confirmed** (ADR-0027) — the existing hybrid (`notice_corpus.search()` for discovery + `notice_corpus.get_clause()` for exact grounding + `supersession_graph.check()` for single-hop relationships) is already correct for this domain. External research: legal-citation RAG hallucinates 17–33% of the time, and "hallucination with a citation is worse than plain hallucination" — directly validating ADR-0004's exact-match-or-refuse rule. `supersession_graph` is a lookup table wearing a graph-shaped API, which is fine since nothing needs multi-hop traversal. Decision 32's deferred notice-versioning now has an explicit resolution path: structured `effective_from`/`effective_to` columns when picked up, not a graph/RAG extension.
+80. **External-intelligence enrichment split into two proposals** (ADR-0028) — cuts against the same conservative line ADR-0009/0011 already drew once for EDM. Split: **sanctions/watchlist screening against official government lists** (OFAC/UN/EU/UK) scoped as a near-term, lower-risk addition — real MCP servers exist, structurally citation-grade like a notice clause. **News/adverse-media/consumer-complaint monitoring** explicitly deferred, pending an actual answer from CBUAE legal/compliance on whether FPSD is even authorized to build this at all — a legal question, not an engineering one, given known false-positive rates (35–95%) and real ToS/personal-data exposure. If ever built, must surface as a separate, clearly-labeled advisory signal, never blended into a grounded citation.
+
+---
+
+## Open items (not yet decided)
+
+- The review's 2 Low findings: a cost model, and an independent model-risk/compliance sign-off process for the AI system itself — both organizational, not architectural (see `.scratch/architecture-review-2026-09-15.md`).
+- A Fraud Database ER diagram and a lightweight PRD — named by the review as the next two SDLC artifacts worth producing (note: archify has no ER-capable diagram type; that one needs a different tool, e.g. Mermaid `erDiagram`).
+- Decision 77's optional draft-completeness pre-check — not built; revisit only if Findings Author drafts are observed wasting reviewer time on completeness issues specifically.
+- Decision 80's sanctions-screening tool — scoped as a direction, but no tool contract exists yet.
+- Decision 80's adverse-media/news monitoring — stays fully on hold until CBUAE legal/compliance actually answers whether FPSD may build it.
+- Supersession confidence threshold (decision 30) and HITL SLA durations (decision 54) — both "tune empirically once real cases exist," not final numbers.
+- ADR-0022's capacity numbers — explicit placeholders, need real annual examination count/concurrency from the examiner team before any GPU procurement decision.
+- On-prem platform choice (VMs vs. K8s/OpenShift) and model choice (Qwen Coder vs. gpt-oss-120b, decision 49) — both still open.
+
+## ADR cross-reference
+
+| ADR | Title | Originating decision(s) |
+|---|---|---|
+| 0001 | LangGraph for orchestration | 8 |
+| 0002 | v1 lean end-to-end scope | 22 |
+| 0003 | Augmentation not autonomy | 1 |
+| 0004 | Citation-grounding hard rule | 4 |
+| 0005 | Notice corpus ingestion in v1 | 29 |
+| 0006 | Ingestion adapter interface | 14 |
+| 0007 | RBAC and audit trail in v1 | 35, 36 |
+| 0008 | Single unified app | 34 |
+| 0009 | EDM not cross-checked against documents | 20 |
+| 0010 | AG and pre-exit revision loops are routine | 37, 38 |
+| 0011 | EDM quantitative analysis is not cross-checking | 42 |
+| 0012 | Fraud database single physical store | 43, 71 |
+| 0013 | Self-hosted LLM in-tenant | 45 |
+| 0014 | Fraud database Oracle | 47 |
+| 0015 | Deployment target and identity | 44, 46, 48 |
+| 0016 | Observability, evaluation, audit stack | 50–54 |
+| 0017 | Guardrail enforcement pattern | 56 |
+| 0018 | Failure, retry, idempotency semantics | 58 |
+| 0019 | Threat model and inference network isolation | 60 |
+| 0020 | Severity rubric as shared versioned service | 61 |
+| 0021 | Quantitative analysis computation guardrail | 62 |
+| 0022 | Capacity and scale placeholder plan | 63 |
+| 0023 | Testing, canary, rollback strategy | 64 |
+| 0024 | Data retention, lifecycle, audit access | 69 |
+| 0025 | LangGraph state schema versioning | 70 |
+| 0026 | No dedicated Verifier agent | 77, 78 |
+| 0027 | Notice corpus storage strategy confirmed | 79 |
+| 0028 | External intelligence scope split | 80 |
