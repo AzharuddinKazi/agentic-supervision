@@ -149,6 +149,20 @@ SLA breaches and current backlog (count of unresolved checkpoints per type) surf
 
 ---
 
+## Definition of done, per agent (ADR-0026)
+
+Today "done" is implicit — a guardrail passed and a human accepted. This section makes each agent's completion condition an explicit, checkable predicate, distilled from guardrails/state fields already defined above rather than a new mechanism:
+
+- **Intake Tracker**: every RFI question has a terminal `intake_status` (`submitted`/`pending`/`suspicious`); `all_submitted` fires only when 100% are non-`pending`.
+- **Compliance Analyst**: every RFI question has exactly one `compliance_verdicts[]` entry that is either (a) grounded with a citation machine-verifiably present in Notice Corpus, or (b) explicitly `insufficient_grounding`/`needs_human_review` — zero questions with no verdict at all, and no verdict skips the supersession check.
+- **Meeting Facilitator**: pre-meeting — every open `supervision_questions[]` item is non-empty, cites a specific gap, and is Lead/Approver-signed-off before the meeting's hard deadline. Post-meeting — every `further_submission_requests[]` item traces to a specific unresolved question, and the sufficiency gate has produced an explicit `sufficient`/`insufficient` — `meeting_followup_status` is never left unset.
+- **Findings Author**: every `findings[]` entry has `severity` equal to the last `severity_rubric.lookup()` return for its `rubric_version` (ADR-0020, code-enforced), every quantitative claim traces to a `quant_analysis.compute()` call (ADR-0021, code-enforced), and the transmittal letter/pre-exit deck drafts are non-empty and reference every signed-off finding.
+- **Approval Coordinator**: `ag_status`/`preexit_status` always lands on a named terminal or waiting state, never null/undefined; AG-summarized feedback is never treated as processed until the Lead/Approver has explicitly confirmed the "AG Feedback Review" checkpoint (ADR-0017).
+
+No agent's output is "verified" by a second LLM pass — see ADR-0026 for why a dedicated Verifier agent was considered and rejected in favor of these code-checkable predicates plus the existing HITL checkpoints.
+
+---
+
 ## Failure, retry, and idempotency
 
 Full rationale: ADR-0018. Four policies apply uniformly across every agent and every checkpoint above — this section is the concrete "what to build" version, not a repeat of the ADR's reasoning.
@@ -204,3 +218,5 @@ The LLM Inference Service sits in its own `security-group` boundary in the deplo
 ## What's deliberately not specified here
 
 Per ADR-0002/`docs/adr/0002`, these are out of v1 and have no agent contract yet: content/plausibility validation (a document-opening judgment agent), a unified cross-feature review queue, effective-dated notice versioning, and anything for SVF/other license types. Do not build stubs for these — add their specs when they're actually scoped.
+
+Also deferred, per later decisions: a dedicated Verifier agent (ADR-0026 — considered and rejected; code guardrails + HITL checkpoints do this job instead) and any external-intelligence enrichment beyond official sanctions/watchlist screening (ADR-0028 — adverse-media/news/consumer-complaint monitoring is on hold pending CBUAE legal/compliance sign-off on whether FPSD is authorized to build it at all; sanctions screening against official government lists is the one piece scoped as a near-term addition, but no tool contract exists for it yet).
