@@ -5533,6 +5533,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>&bull; Sufficiency Check is explicitly human-judged (ADR-0003 augmentation principle) — no LLM auto-resolution of &quot;resolved&quot;, since that was previously undefined</li>
         </ul>
       </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot slate"></div>
+          <h3>How to read this diagram</h3>
+        </div>
+        <ul>
+          <li>&bull; Branch points (e.g. Sufficiency Check&#39;s sufficient/insufficient split) are edge-labeled, not drawn as decision diamonds — archify&#39;s workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape</li>
+          <li>&bull; Closest standard: a UML activity diagram without gateway notation. Human checkpoints use a dedicated lane, not a person-icon convention</li>
+        </ul>
+      </div>
     </div>
 
   </div>

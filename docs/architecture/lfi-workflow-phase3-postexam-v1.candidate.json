@@ -32,6 +32,7 @@
     { "id": "showcase-changes", "from": "ag_showcase", "to": "ag_feedback_review", "label": "changes requested", "variant": "security", "role": "branch" }
   ],
   "cards": [
-    { "dot": "rose", "title": "Fixes from Critical Finding #1 (ADR-0017)", "items": ["AG feedback surfaces here first, with its own interrupt() — never passed straight to Findings & Reporting as a redraft trigger; redraft loop not drawn", "Persisted severity must equal rubric.lookup()'s return value, enforced in code", "Pre-exit concerns → exit deck, loops back; no concerns → exit meeting (terminal)"] }
+    { "dot": "rose", "title": "Fixes from Critical Finding #1 (ADR-0017)", "items": ["AG feedback surfaces here first, with its own interrupt() — never passed straight to Findings & Reporting as a redraft trigger; redraft loop not drawn", "Persisted severity must equal rubric.lookup()'s return value, enforced in code", "Pre-exit concerns → exit deck, loops back; no concerns → exit meeting (terminal)"] },
+    { "dot": "slate", "title": "How to read this diagram", "items": ["Branch points (e.g. AG showcase's approved/changes-requested split) are edge-labeled, not drawn as decision diamonds — archify's workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape", "Closest standard: a UML activity diagram without gateway notation. Human checkpoints use a dedicated lane, not a person-icon convention", "external lane covers two things sharing one color — genuinely external meetings (AG Showcase, Pre-Exit) and internal state-machine trigger events (findings_trigger); lane placement disambiguates them"] }
   ]
 }

@@ -5525,6 +5525,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>&bull; Gap Analysis Agent calls notice_corpus.get_clause(), edm.query(), and supersession_graph.check() inside this node — full tool contracts, retry policy, and timeout values live in agent-specifications.md / ADR-0018, not duplicated here</li>
         </ul>
       </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot slate"></div>
+          <h3>How to read this diagram</h3>
+        </div>
+        <ul>
+          <li>&bull; Branch points (e.g. Gap Analysis&#39;s grounded/ungrounded split) are edge-labeled, not drawn as decision diamonds — archify&#39;s workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape</li>
+          <li>&bull; Closest standard: a UML activity diagram without gateway notation. Human checkpoints use a dedicated lane, not a person-icon convention</li>
+        </ul>
+      </div>
     </div>
 
   </div>

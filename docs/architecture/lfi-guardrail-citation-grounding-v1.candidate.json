@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Citation-Grounding Guardrail — Call Sequence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [900, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "Tool call" },
+        "emphasis": { "label": "Guardrail-relevant call or log" },
+        "dashed": { "label": "Transient failure / retry" },
+        "return": { "label": "Tool response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "gap_analysis", "type": "messagebus", "label": "Gap Analysis Agent", "sublabel": "Compliance Analyst" },
+    { "id": "notice_corpus", "type": "database", "label": "Notice Corpus", "sublabel": "Fraud DB" },
+    { "id": "supersession", "type": "cloud", "label": "Supersession Graph", "sublabel": "deterministic" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only" },
+    { "id": "examiner_dashboard", "type": "frontend", "label": "Examiner Dashboard", "sublabel": "human review queue" }
+  ],
+  "segments": [
+    { "from": 150, "to": 358, "label": "Grounded — citation found" },
+    { "from": 374, "to": 526, "label": "Tool-unavailable ≠ no match (ADR-0018)" },
+    { "from": 542, "to": 700, "label": "Ungrounded — real absence (ADR-0004)" }
+  ],
+  "messages": [
+    { "from": "gap_analysis", "to": "notice_corpus", "y": 180, "label": "get_clause(clause_id)", "variant": "emphasis" },
+    { "from": "notice_corpus", "to": "gap_analysis", "y": 222, "label": "exact clause match", "variant": "return" },
+    { "from": "gap_analysis", "to": "supersession", "y": 264, "label": "check(clause_id)", "variant": "default" },
+    { "from": "supersession", "to": "gap_analysis", "y": 306, "label": "superseding clause + confidence score", "variant": "return" },
+    { "from": "gap_analysis", "to": "audit_trail", "y": 348, "label": "log grounded verdict + citation", "variant": "emphasis" },
+
+    { "from": "gap_analysis", "to": "notice_corpus", "y": 400, "label": "get_clause(clause_id) — attempt 1", "variant": "default" },
+    { "from": "notice_corpus", "to": "gap_analysis", "y": 442, "label": "timeout / connection error", "variant": "dashed", "note": "distinct outcome from \"no match\" — never collapsed into it" },
+    { "from": "gap_analysis", "to": "notice_corpus", "y": 484, "label": "retry with backoff — attempt 2 (bounded, ADR-0018)", "variant": "dashed" },
+    { "from": "notice_corpus", "to": "gap_analysis", "y": 516, "label": "exact clause match (recovered)", "variant": "return" },
+
+    { "from": "gap_analysis", "to": "notice_corpus", "y": 568, "label": "get_clause(clause_id)", "variant": "default" },
+    { "from": "notice_corpus", "to": "gap_analysis", "y": 610, "label": "no high-confidence match — real absence, not a timeout", "variant": "return" },
+    { "from": "gap_analysis", "to": "audit_trail", "y": 652, "label": "log insufficient_grounding (never a best-guess verdict)", "variant": "emphasis" },
+    { "from": "gap_analysis", "to": "examiner_dashboard", "y": 694, "label": "surface for human review", "variant": "emphasis" }
+  ],
+  "activations": [
+    { "participant": "gap_analysis", "from": 170, "to": 704, "type": "messagebus" },
+    { "participant": "notice_corpus", "from": 174, "to": 228, "type": "database" },
+    { "participant": "supersession", "from": 258, "to": 312, "type": "cloud" },
+    { "participant": "audit_trail", "from": 342, "to": 354, "type": "database" },
+    { "participant": "notice_corpus", "from": 394, "to": 522, "type": "database" },
+    { "participant": "notice_corpus", "from": 562, "to": 616, "type": "database" },
+    { "participant": "audit_trail", "from": 646, "to": 658, "type": "database" },
+    { "participant": "examiner_dashboard", "from": 688, "to": 700, "type": "frontend" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Guardrail (ADR-0004 / ADR-0018)",
+      "items": [
+        "A tool-unavailable result (timeout, connection error) is never treated as \"no matching clause\" — only a real absence after a successful lookup routes to insufficient_grounding",
+        "Verdicts are only ever logged after a citation is either confirmed grounded or confirmed genuinely absent — never while the corpus's availability is still unknown"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Retry policy",
+      "items": [
+        "Bounded retry with backoff on transient failures (timeout, connection error) before either recovering or exhausting attempts — full policy in tool-contracts.md",
+        "supersession_graph.check() runs after a grounded citation is confirmed, not before — see agent-specifications.md's sequencing note"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Covers only the citation-grounding call sequence inside Gap Analysis Agent's ReAct loop, one clause at a time — the surrounding per-question loop and low-confidence-supersession routing to needs_human_review are drawn in lfi-workflow-phase1-preexam-v1.html, not repeated here",
+        "Closest standard: a UML sequence diagram — archify's sequence type supports activations/lifelines/return messages natively, so this maps cleanly with no notation gap"
+      ]
+    }
+  ]
+}

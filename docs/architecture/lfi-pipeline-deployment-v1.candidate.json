@@ -4,7 +4,33 @@
   "meta": {
     "title": "LFI Examination Pipeline — v1 Deployment Architecture",
     "quality_profile": "showcase",
-    "engineering_profile": "deployment-ownership"
+    "engineering_profile": "deployment-ownership",
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "external": {
+          "label": "Human step / external system"
+        },
+        "frontend": {
+          "label": "Human-facing UI (software)"
+        },
+        "backend": {
+          "label": "LLM Agent — reasoning only"
+        },
+        "messagebus": {
+          "label": "LLM Agent + Tool Call"
+        },
+        "cloud": {
+          "label": "Deterministic tool / rule-based service"
+        },
+        "database": {
+          "label": "Data store"
+        },
+        "security": {
+          "label": "Platform / infrastructure service (not an agent)"
+        }
+      }
+    }
   },
   "components": [
     {
@@ -81,7 +107,7 @@
     },
     {
       "id": "intake_tracker",
-      "type": "backend",
+      "type": "cloud",
       "label": "Intake Tracker",
       "sublabel": "Rule-based (not LLM)",
       "tag": "presence · format check",
@@ -96,7 +122,7 @@
     },
     {
       "id": "gap_analysis",
-      "type": "backend",
+      "type": "messagebus",
       "label": "Gap Analysis Agent",
       "sublabel": "Compliance Analyst",
       "tag": "citation-grounded",
@@ -126,7 +152,7 @@
     },
     {
       "id": "findings_reporting",
-      "type": "backend",
+      "type": "messagebus",
       "label": "Findings & Reporting",
       "sublabel": "Findings Author",
       "tag": "qual + quant → letter + deck",
@@ -141,7 +167,7 @@
     },
     {
       "id": "ag_preexit",
-      "type": "backend",
+      "type": "cloud",
       "label": "AG & Pre-Exit",
       "sublabel": "Approval Coordinator",
       "tag": "showcase → revise loop",
@@ -156,7 +182,7 @@
     },
     {
       "id": "llm_inference",
-      "type": "backend",
+      "type": "security",
       "label": "LLM Inference Service",
       "sublabel": "self-hosted, GPU",
       "tag": "ML Platform Team",
@@ -201,7 +227,7 @@
     },
     {
       "id": "llm_eval",
-      "type": "backend",
+      "type": "security",
       "label": "LLM Tracing & Eval",
       "sublabel": "Langfuse (self-hosted)",
       "tag": "AI/ML Engineering",
@@ -216,7 +242,7 @@
     },
     {
       "id": "observability",
-      "type": "backend",
+      "type": "security",
       "label": "Observability Stack",
       "sublabel": "OTel + Prometheus/Grafana",
       "tag": "SRE Team",
@@ -460,7 +486,8 @@
       "title": "4 LLM agents + 1 rule-based service",
       "items": [
         "One LangGraph runtime — Intake Tracker is rule-based, not LLM",
-        "Persona on each box, guardrail on hover. Full detail: agent-specifications.md"
+        "Persona on each box, guardrail on hover. Full detail: agent-specifications.md",
+        "Color key matches lfi-pipeline-v1's automation-role legend (teal=LLM-only, peach=LLM+tool, gold=deterministic); security/gold-adjacent here also covers platform infra (LLM Inference, Secrets Manager, Observability, Tracing & Eval) that isn't itself an agent"
       ]
     },
     {

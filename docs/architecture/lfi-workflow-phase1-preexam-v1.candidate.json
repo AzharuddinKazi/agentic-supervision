@@ -153,7 +153,7 @@
       "to": "human_review_flags",
       "label": "no citation, or supersession < threshold",
       "variant": "security",
-      "role": "error"
+      "role": "branch"
     },
     {
       "id": "flags-review",
@@ -196,6 +196,14 @@
       "title": "Tool calls (not drawn — see agent-specifications.md)",
       "items": [
         "Gap Analysis Agent calls notice_corpus.get_clause(), edm.query(), and supersession_graph.check() inside this node — full tool contracts, retry policy, and timeout values live in agent-specifications.md / ADR-0018, not duplicated here"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "How to read this diagram",
+      "items": [
+        "Branch points (e.g. Gap Analysis's grounded/ungrounded split) are edge-labeled, not drawn as decision diamonds — archify's workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape",
+        "Closest standard: a UML activity diagram without gateway notation. Human checkpoints use a dedicated lane, not a person-icon convention"
       ]
     }
   ]
