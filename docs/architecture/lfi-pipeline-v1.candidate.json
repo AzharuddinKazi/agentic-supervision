@@ -181,7 +181,7 @@
       "id": "clarification_agent",
       "type": "backend",
       "label": "Meeting Facilitator",
-      "sublabel": "questions + minutes → actions",
+      "sublabel": "Qs + minutes → actions",
       "tag": "LLM, no tool calls",
       "pos": [
         666,
@@ -196,7 +196,7 @@
       "id": "findings_reporting",
       "type": "messagebus",
       "label": "Findings Author",
-      "sublabel": "qual + quant → letter + deck",
+      "sublabel": "qual + quant → deck",
       "tag": "LLM + tool calls",
       "pos": [
         840,
@@ -250,6 +250,21 @@
         180,
         58
       ]
+    },
+    {
+      "id": "notice_corpus_mgr",
+      "type": "messagebus",
+      "label": "Notice Corpus Manager",
+      "sublabel": "upload → OCR → confirm",
+      "tag": "LLM + tool call, UI-triggered",
+      "pos": [
+        1120,
+        570
+      ],
+      "size": [
+        140,
+        58
+      ]
     }
   ],
   "boundaries": [
@@ -266,7 +281,8 @@
         "findings_reporting",
         "ag_preexit",
         "examiner_app",
-        "audit_trail"
+        "audit_trail",
+        "notice_corpus_mgr"
       ],
       "pad": 12
     },
@@ -448,6 +464,19 @@
       "fromSide": "bottom",
       "toSide": "top",
       "labelDy": 12
+    },
+    {
+      "id": "app-to-noticemgr",
+      "from": "examiner_app",
+      "to": "notice_corpus_mgr",
+      "label": "Settings/Admin: upload notice",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [1190, 520]
+      ],
+      "labelAt": [1190, 566]
     }
   ],
   "cards": [
@@ -458,7 +487,9 @@
         "Grey/external = a human step (meeting, call, decision) or an outside system — not automated by this pipeline",
         "Teal/backend = an LLM agent reasoning alone; peach/messagebus = an LLM agent that also calls tools",
         "Gold/cloud = a deterministic tool or rule-based service — no LLM involved at all; violet/database = a data store",
-        "In-Person Deep Dive's minutes feed Meeting Facilitator's post-meeting extraction (edge not drawn — crosses the data-source row; see agent-specifications.md)"
+        "In-Person Deep Dive's minutes feed Meeting Facilitator's post-meeting extraction (edge not drawn — crosses the data-source row; see agent-specifications.md)",
+        "Notice Corpus Manager is peach/messagebus by role (LLM + tool call), but it's UI-triggered on-demand, not a persistent LangGraph agent (ADR-0029)",
+        "Notice Corpus Manager's own edge into Notice Corpus (confirmed clauses become citable) is not drawn — crosses the whole diagram width for no added value; see agent-specifications.md"
       ]
     },
     {

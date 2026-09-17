@@ -1,0 +1,226 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Examiner Dashboard — Navigation & RBAC Userflow",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "auditor",
+      "label": "Auditor"
+    },
+    {
+      "id": "shared",
+      "label": "Examiner + Lead/Approver (shared screens)"
+    },
+    {
+      "id": "gated",
+      "label": "Lead/Approver-only actions"
+    }
+  ],
+  "phases": [
+    {
+      "id": "signin",
+      "label": "Sign-in",
+      "fromCol": 0,
+      "toCol": 0
+    },
+    {
+      "id": "landing",
+      "label": "Role-based landing",
+      "fromCol": 1,
+      "toCol": 1
+    },
+    {
+      "id": "enter",
+      "label": "Enter examination",
+      "fromCol": 2,
+      "toCol": 2
+    },
+    {
+      "id": "workspace",
+      "label": "Tabbed workspace",
+      "fromCol": 3,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "actions",
+      "label": "Gated actions",
+      "fromCol": 4,
+      "toCol": 4
+    },
+    {
+      "id": "lifecycle",
+      "label": "Lifecycle",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "login",
+    "portfolio_home",
+    "select_exam",
+    "workspace",
+    "leadapprover_signoff",
+    "auto_close"
+  ],
+  "nodes": [
+    {
+      "id": "login",
+      "lane": "shared",
+      "col": 0,
+      "type": "external",
+      "label": "CBUAE SSO Login",
+      "sublabel": "role claim in session",
+      "tag": "IdP: open item",
+      "width": 136
+    },
+    {
+      "id": "portfolio_home",
+      "lane": "shared",
+      "col": 1,
+      "type": "frontend",
+      "label": "Portfolio Home",
+      "sublabel": "Active examinations",
+      "tag": "LFI, phase, SLA flag",
+      "width": 136
+    },
+    {
+      "id": "audit_portfolio",
+      "lane": "auditor",
+      "col": 1,
+      "type": "frontend",
+      "label": "Portfolio Audit Log",
+      "sublabel": "read-only",
+      "tag": "Auditor's landing",
+      "width": 136
+    },
+    {
+      "id": "select_exam",
+      "lane": "shared",
+      "col": 2,
+      "type": "frontend",
+      "label": "Select Examination",
+      "sublabel": "opens workspace",
+      "width": 136
+    },
+    {
+      "id": "workspace",
+      "lane": "shared",
+      "col": 3,
+      "type": "frontend",
+      "label": "Exam Workspace",
+      "sublabel": "7 tabs, Setup → Audit Log",
+      "tag": "unlocks by data",
+      "width": 136
+    },
+    {
+      "id": "examiner_view",
+      "lane": "shared",
+      "col": 4,
+      "type": "frontend",
+      "label": "Examiner View",
+      "sublabel": "no sign-off",
+      "width": 136
+    },
+    {
+      "id": "leadapprover_signoff",
+      "lane": "gated",
+      "col": 4,
+      "type": "security",
+      "label": "Sign-off",
+      "sublabel": "accept / edit / reject",
+      "tag": "role-gated screen",
+      "width": 136
+    },
+    {
+      "id": "auto_close",
+      "lane": "shared",
+      "col": 5,
+      "type": "backend",
+      "label": "Auto-closes",
+      "sublabel": "Active → Completed",
+      "tag": "no manual close button",
+      "width": 136
+    }
+  ],
+  "edges": [
+    {
+      "id": "login-portfolio",
+      "from": "login",
+      "to": "portfolio_home",
+      "label": "Examiner / Lead-Approver",
+      "variant": "default"
+    },
+    {
+      "id": "login-audit",
+      "from": "login",
+      "to": "audit_portfolio",
+      "label": "Auditor",
+      "variant": "dashed",
+      "role": "branch",
+      "route": "return-left"
+    },
+    {
+      "id": "portfolio-select",
+      "from": "portfolio_home",
+      "to": "select_exam",
+      "variant": "default"
+    },
+    {
+      "id": "select-workspace",
+      "from": "select_exam",
+      "to": "workspace",
+      "variant": "default"
+    },
+    {
+      "id": "workspace-examiner",
+      "from": "workspace",
+      "to": "examiner_view",
+      "label": "Examiner role",
+      "variant": "default"
+    },
+    {
+      "id": "workspace-leadapprover",
+      "from": "workspace",
+      "to": "leadapprover_signoff",
+      "label": "Lead/Approver role",
+      "variant": "emphasis"
+    },
+    {
+      "id": "signoff-close",
+      "from": "leadapprover_signoff",
+      "to": "auto_close",
+      "label": "preexit_status reaches proceeded_to_exit",
+      "variant": "emphasis"
+    },
+    {
+      "id": "examiner-close",
+      "from": "examiner_view",
+      "to": "auto_close",
+      "label": "same terminal state, no separate action",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "RBAC model (decisions 89, 109; ADR-0029)",
+      "items": [
+        "One screen per tab, gated actions — not two parallel UIs. Sign-off controls render only for Lead/Approver, since ADR-0029's whole checkpoint architecture assumes drafter and approver are different people",
+        "Full tab order: Setup → Intake → Gap Analysis → Meeting → Findings → Approval → Audit Log. Settings/Admin (rubric editor, Notice Corpus Manager) and per-tab HITL detail live outside this diagram — see lfi-pipeline-v1.html and agent-specifications.md"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "How to read this diagram",
+      "items": [
+        "Role branches are edge-labeled, not decision diamonds — archify's workflow grammar has no gateway/fork-join primitive",
+        "\"Auto-closes\" fires the instant preexit_status reaches proceeded_to_exit — a code-checkable terminal condition, same pattern as each agent's definition-of-done (ADR-0026)"
+      ]
+    }
+  ]
+}

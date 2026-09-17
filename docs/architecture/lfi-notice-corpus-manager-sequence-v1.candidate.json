@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Notice Corpus Manager — Upload Call Sequence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action / tool call" },
+        "emphasis": { "label": "Grounding-relevant call or write" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "human, Settings/Admin" },
+    { "id": "examiner_app", "type": "frontend", "label": "Examiner Dashboard", "sublabel": "Settings/Admin screen" },
+    { "id": "notice_corpus_mgr", "type": "messagebus", "label": "Notice Corpus Manager", "sublabel": "LLM + tool call, UI-triggered" },
+    { "id": "ocr_segmenter", "type": "cloud", "label": "OCR + Segmenter", "sublabel": "deterministic tool" },
+    { "id": "notice_corpus", "type": "database", "label": "Notice Corpus", "sublabel": "Fraud DB" }
+  ],
+  "segments": [
+    { "from": 150, "to": 340, "label": "Auto-processing (OCR + segment)" },
+    { "from": 356, "to": 486, "label": "Human review + confirm (ADR-0004 grounding rule)" },
+    { "from": 502, "to": 620, "label": "Persist as citable" }
+  ],
+  "messages": [
+    { "from": "lead_approver", "to": "examiner_app", "y": 180, "label": "upload notice document", "variant": "default" },
+    { "from": "examiner_app", "to": "notice_corpus_mgr", "y": 222, "label": "Settings/Admin: notice upload", "variant": "emphasis" },
+    { "from": "notice_corpus_mgr", "to": "ocr_segmenter", "y": 264, "label": "run OCR + auto-segment into clauses", "variant": "default" },
+    { "from": "ocr_segmenter", "to": "notice_corpus_mgr", "y": 306, "label": "draft clauses (uncommitted)", "variant": "return" },
+
+    { "from": "notice_corpus_mgr", "to": "examiner_app", "y": 358, "label": "draft clauses for human review", "variant": "emphasis" },
+    { "from": "examiner_app", "to": "lead_approver", "y": 400, "label": "present draft clauses", "variant": "default" },
+    { "from": "lead_approver", "to": "examiner_app", "y": 442, "label": "corrections + confirm", "variant": "return", "note": "no clause becomes citable without this explicit confirmed state" },
+
+    { "from": "examiner_app", "to": "notice_corpus_mgr", "y": 504, "label": "human-confirmed clauses", "variant": "emphasis" },
+    { "from": "notice_corpus_mgr", "to": "notice_corpus", "y": 546, "label": "write confirmed clauses", "variant": "emphasis" },
+    { "from": "notice_corpus", "to": "notice_corpus_mgr", "y": 588, "label": "stored — now citable", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "notice_corpus_mgr", "from": 212, "to": 598, "type": "messagebus" },
+    { "participant": "ocr_segmenter", "from": 254, "to": 316, "type": "cloud" },
+    { "participant": "examiner_app", "from": 212, "to": 598, "type": "frontend" },
+    { "participant": "notice_corpus", "from": 536, "to": 598, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Grounding rule (ADR-0004; decisions 108, 113)",
+      "items": [
+        "Auto-OCR and auto-segmentation are drafts only — a clause is never citable in Compliance Analyst's grounded lookups until a human explicitly confirms it, the same \"auto-derive, human confirms\" pattern used for RFI parsing",
+        "Notice Corpus Manager is UI-triggered on-demand, not a persistent LangGraph agent (ADR-0029) — it only runs when a Lead/Approver initiates an upload"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Covers only the upload → confirm call sequence (decision 108); access control (Lead/Approver only, no Content Owner role — decision 114) and the reactive, inline supersession review path (decision 115) are described in agent-specifications.md, not repeated here",
+        "Closest standard: a UML sequence diagram — archify's sequence type supports activations/lifelines/return messages natively, so this maps cleanly with no notation gap"
+      ]
+    }
+  ]
+}
