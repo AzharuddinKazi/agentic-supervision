@@ -13,10 +13,6 @@
     {
       "id": "shared",
       "label": "Examiner + Lead/Approver (shared screens)"
-    },
-    {
-      "id": "gated",
-      "label": "Lead/Approver-only actions"
     }
   ],
   "phases": [
@@ -64,7 +60,7 @@
     "portfolio_home",
     "select_exam",
     "workspace",
-    "leadapprover_signoff",
+    "workspace_actions",
     "auto_close"
   ],
   "nodes": [
@@ -118,22 +114,13 @@
       "width": 136
     },
     {
-      "id": "examiner_view",
+      "id": "workspace_actions",
       "lane": "shared",
       "col": 4,
-      "type": "frontend",
-      "label": "Examiner View",
-      "sublabel": "no sign-off",
-      "width": 136
-    },
-    {
-      "id": "leadapprover_signoff",
-      "lane": "gated",
-      "col": 4,
       "type": "security",
-      "label": "Sign-off",
-      "sublabel": "accept / edit / reject",
-      "tag": "role-gated screen",
+      "label": "Gated Actions",
+      "sublabel": "same screen, both roles",
+      "tag": "sign-off: Lead/Approver only",
       "width": 136
     },
     {
@@ -152,7 +139,7 @@
       "id": "login-portfolio",
       "from": "login",
       "to": "portfolio_home",
-      "label": "Examiner / Lead-Approver",
+      "label": "Examiner, Lead/Approver",
       "variant": "default"
     },
     {
@@ -177,32 +164,17 @@
       "variant": "default"
     },
     {
-      "id": "workspace-examiner",
+      "id": "workspace-actions",
       "from": "workspace",
-      "to": "examiner_view",
-      "label": "Examiner role",
+      "to": "workspace_actions",
       "variant": "default"
     },
     {
-      "id": "workspace-leadapprover",
-      "from": "workspace",
-      "to": "leadapprover_signoff",
-      "label": "Lead/Approver role",
-      "variant": "emphasis"
-    },
-    {
-      "id": "signoff-close",
-      "from": "leadapprover_signoff",
+      "id": "actions-close",
+      "from": "workspace_actions",
       "to": "auto_close",
       "label": "preexit_status reaches proceeded_to_exit",
       "variant": "emphasis"
-    },
-    {
-      "id": "examiner-close",
-      "from": "examiner_view",
-      "to": "auto_close",
-      "label": "same terminal state, no separate action",
-      "variant": "dashed"
     }
   ],
   "cards": [
@@ -210,8 +182,9 @@
       "dot": "violet",
       "title": "RBAC model (decisions 89, 109; ADR-0029)",
       "items": [
-        "One screen per tab, gated actions — not two parallel UIs. Sign-off controls render only for Lead/Approver, since ADR-0029's whole checkpoint architecture assumes drafter and approver are different people",
-        "Full tab order: Setup → Intake → Gap Analysis → Meeting → Findings → Approval → Audit Log. Settings/Admin (rubric editor, Notice Corpus Manager) and per-tab HITL detail live outside this diagram — see lfi-pipeline-v1.html and agent-specifications.md"
+        "One screen per tab, gated actions — not two parallel UIs. \"Gated Actions\" above is that one screen: both roles land on it, sign-off controls just render only for Lead/Approver, since ADR-0029's whole checkpoint architecture assumes drafter and approver are different people",
+        "Full tab order: Setup → Intake → Gap Analysis → Meeting → Findings → Approval → Audit Log — tabs unlock independently once their own data exists, not a hard phase-stepper (decision 83), since AG/pre-exit revision loops mean progress isn't strictly linear",
+        "Settings/Admin (rubric editor, Notice Corpus Manager) and per-tab HITL detail live outside this diagram — see lfi-pipeline-v1.html and agent-specifications.md"
       ]
     },
     {

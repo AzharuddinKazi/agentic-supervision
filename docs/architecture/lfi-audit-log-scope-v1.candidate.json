@@ -8,7 +8,7 @@
   },
   "lanes": [
     { "id": "system", "label": "Any Checkpoint" },
-    { "id": "examiner", "label": "Examiner / Lead-Approver" },
+    { "id": "examiner", "label": "Examiner, Lead/Approver" },
     { "id": "auditor", "label": "Auditor" }
   ],
   "phases": [
@@ -70,7 +70,7 @@
       "title": "Scope is the only difference (decision 106)",
       "items": [
         "The Audit Log tab shows identical full detail to all three roles — Examiner, Lead/Approver, and Auditor never see a redacted or summarized version of the same log",
-        "The real distinction is reach, not content: Examiner/Lead-Approver only reach it from within an examination they're assigned to, while Auditor gets a portfolio-wide, cross-examination view as their effective landing page — they hold no drafting/sign-off role that needs the per-examination workspace otherwise"
+        "The real distinction is reach, not content: Examiner and Lead/Approver only reach it from within an examination they're assigned to, while Auditor gets a portfolio-wide, cross-examination view as their effective landing page — they hold no drafting/sign-off role that needs the per-examination workspace otherwise"
       ]
     },
     {

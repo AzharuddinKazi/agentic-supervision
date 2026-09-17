@@ -19,12 +19,14 @@
     { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "human, Setup tab" },
     { "id": "examiner_app", "type": "frontend", "label": "Examiner Dashboard", "sublabel": "Setup tab" },
     { "id": "rfi_parser", "type": "cloud", "label": "RFI Parser", "sublabel": "deterministic tool" },
-    { "id": "rfi_store", "type": "database", "label": "RFI Store", "sublabel": "Fraud DB" }
+    { "id": "rfi_store", "type": "database", "label": "RFI Store", "sublabel": "Fraud DB" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only" }
   ],
   "segments": [
     { "from": 150, "to": 298, "label": "Create + upload RFI" },
     { "from": 314, "to": 444, "label": "Auto-parse + human confirm" },
-    { "from": 460, "to": 578, "label": "Finalize (editable after)" }
+    { "from": 460, "to": 578, "label": "Finalize (editable after)" },
+    { "from": 594, "to": 732, "label": "Post-creation edit (decision 111)" }
   ],
   "messages": [
     { "from": "lead_approver", "to": "examiner_app", "y": 180, "label": "pick LFI, set start date + SFTP root", "variant": "default" },
@@ -37,12 +39,19 @@
 
     { "from": "examiner_app", "to": "rfi_store", "y": 462, "label": "write confirmed question list", "variant": "emphasis" },
     { "from": "rfi_store", "to": "examiner_app", "y": 504, "label": "stored", "variant": "return" },
-    { "from": "examiner_app", "to": "lead_approver", "y": 546, "label": "setup complete — Intake unlocks", "variant": "default" }
+    { "from": "examiner_app", "to": "lead_approver", "y": 546, "label": "setup complete — Intake unlocks", "variant": "default" },
+
+    { "from": "lead_approver", "to": "examiner_app", "y": 608, "label": "edit Setup fields (post-creation)", "variant": "default" },
+    { "from": "examiner_app", "to": "rfi_store", "y": 650, "label": "update SFTP root / start date", "variant": "emphasis" },
+    { "from": "rfi_store", "to": "examiner_app", "y": 692, "label": "updated", "variant": "return" },
+    { "from": "examiner_app", "to": "audit_trail", "y": 720, "label": "log \"setup corrected\" event", "variant": "emphasis", "note": "distinct event type, not write-once — decision 111" }
   ],
   "activations": [
-    { "participant": "examiner_app", "from": 170, "to": 556, "type": "frontend" },
+    { "participant": "examiner_app", "from": 170, "to": 726, "type": "frontend" },
     { "participant": "rfi_parser", "from": 254, "to": 326, "type": "cloud" },
-    { "participant": "rfi_store", "from": 452, "to": 514, "type": "database" }
+    { "participant": "rfi_store", "from": 452, "to": 514, "type": "database" },
+    { "participant": "rfi_store", "from": 640, "to": 702, "type": "database" },
+    { "participant": "audit_trail", "from": 710, "to": 726, "type": "database" }
   ],
   "cards": [
     {
@@ -57,7 +66,7 @@
       "dot": "slate",
       "title": "Diagram scope",
       "items": [
-        "Covers only examination creation (decisions 82, 85, 86); the SFTP root's fixed per-license-type folder structure and the Ingestion Adapter's own poll/fetch cycle are drawn in lfi-pipeline-v1.html, not repeated here",
+        "Covers examination creation and post-creation edit (decisions 82, 85, 86, 111); the SFTP root's fixed per-license-type folder structure and the Ingestion Adapter's own poll/fetch cycle are drawn in lfi-pipeline-v1.html, not repeated here",
         "Closest standard: a UML sequence diagram — archify's sequence type supports activations/lifelines/return messages natively, so this maps cleanly with no notation gap"
       ]
     }

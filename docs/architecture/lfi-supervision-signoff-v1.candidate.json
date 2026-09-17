@@ -1,0 +1,87 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Supervision-Question Sign-off — Per-Question, Pre-Meeting (decision 97)",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 534]
+  },
+  "lanes": [
+    { "id": "system", "label": "Compliance Analyst" },
+    { "id": "gated", "label": "Lead/Approver" }
+  ],
+  "phases": [
+    { "id": "draft", "label": "Drafted", "fromCol": 0, "toCol": 0 },
+    { "id": "signoff", "label": "Per-question sign-off", "fromCol": 1, "toCol": 1, "variant": "security" },
+    { "id": "ready", "label": "Ready", "fromCol": 2, "toCol": 3 }
+  ],
+  "mainPath": [
+    "qs_drafted",
+    "per_question_signoff",
+    "list_finalized",
+    "meeting_ready"
+  ],
+  "nodes": [
+    {
+      "id": "qs_drafted",
+      "lane": "system",
+      "col": 0,
+      "type": "backend",
+      "label": "Supervision Qs",
+      "sublabel": "+ gaps/strengths",
+      "width": 136
+    },
+    {
+      "id": "per_question_signoff",
+      "lane": "gated",
+      "col": 1,
+      "type": "security",
+      "label": "Per-Question Review",
+      "sublabel": "accept / edit / reject",
+      "tag": "matches human-agreement metric",
+      "width": 136
+    },
+    {
+      "id": "list_finalized",
+      "lane": "gated",
+      "col": 2,
+      "type": "backend",
+      "label": "List Finalized",
+      "sublabel": "every question disposed",
+      "width": 136
+    },
+    {
+      "id": "meeting_ready",
+      "lane": "system",
+      "col": 3,
+      "type": "backend",
+      "label": "Ready for Meeting",
+      "sublabel": "before hard deadline",
+      "tag": "→ Phase 2 meeting",
+      "width": 136
+    }
+  ],
+  "edges": [
+    { "id": "drafted-signoff", "from": "qs_drafted", "to": "per_question_signoff", "variant": "default" },
+    { "id": "signoff-finalized", "from": "per_question_signoff", "to": "list_finalized", "label": "every item disposed", "variant": "emphasis" },
+    { "id": "finalized-ready", "from": "list_finalized", "to": "meeting_ready", "variant": "default" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Per-question, not whole-list (decision 97; ADR-0016)",
+      "items": [
+        "Supervision-question sign-off is per-question, matching the human-agreement-rate metric's per-item design — the list-level checkpoint completes only once every question has an individual accept/edit/reject disposition, not a single approve-all action",
+        "This is the pre-meeting checkpoint, distinct from the post-meeting Further-Submission Review (decision 99, lfi-further-submission-review-v1.html) — the two cover different artifacts at different points in the flow"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Same shape as lfi-gap-analysis-resolution-v1.html's per-item pattern, applied to the earlier supervision-question artifact instead of a flagged gap-analysis verdict",
+        "The citation-grounding source of these questions is drawn in lfi-guardrail-citation-grounding-v1.html, not repeated here"
+      ]
+    }
+  ]
+}
