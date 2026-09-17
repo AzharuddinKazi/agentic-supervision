@@ -194,6 +194,61 @@ Only the review's 2 Low findings (cost model, independent model-risk/compliance 
 79. **Notice/clause corpus storage strategy confirmed** (ADR-0027) — the existing hybrid (`notice_corpus.search()` for discovery + `notice_corpus.get_clause()` for exact grounding + `supersession_graph.check()` for single-hop relationships) is already correct for this domain. External research: legal-citation RAG hallucinates 17–33% of the time, and "hallucination with a citation is worse than plain hallucination" — directly validating ADR-0004's exact-match-or-refuse rule. `supersession_graph` is a lookup table wearing a graph-shaped API, which is fine since nothing needs multi-hop traversal. Decision 32's deferred notice-versioning now has an explicit resolution path: structured `effective_from`/`effective_to` columns when picked up, not a graph/RAG extension.
 80. **External-intelligence enrichment split into two proposals** (ADR-0028) — cuts against the same conservative line ADR-0009/0011 already drew once for EDM. Split: **sanctions/watchlist screening against official government lists** (OFAC/UN/EU/UK) scoped as a near-term, lower-risk addition — real MCP servers exist, structurally citation-grade like a notice clause. **News/adverse-media/consumer-complaint monitoring** explicitly deferred, pending an actual answer from CBUAE legal/compliance on whether FPSD is even authorized to build this at all — a legal question, not an engineering one, given known false-positive rates (35–95%) and real ToS/personal-data exposure. If ever built, must surface as a separate, clearly-labeled advisory signal, never blended into a grounded citation.
 
+## Round 18 — Examiner Dashboard userflow (2026-09-17)
+
+**Question asked**: user asked to work through the userflow — the screen-by-screen journey an Examiner, Lead/Approver, and Auditor actually take through the single unified app (ADR-0008) across all three phases — expecting it to surface further architectural decisions. Grilled across nine rounds covering navigation/portfolio structure, per-tab screen content and RBAC-gated actions for every HITL checkpoint, and data/admin screens (LFI registry, Notice Corpus, rubric editor, login).
+
+**Navigation and portfolio structure**
+81. **Portfolio home view**: landing page lists all active examinations (LFI, license type, current phase, SLA countdown/breach flag, open-checkpoint count, last-activity timestamp), filterable Active/Completed/All (default Active) — what a Lead/Approver sees before entering any single examination's workspace.
+82. **Examination creation is a one-time in-app setup screen, not automated RFI generation**: Lead/Approver picks an LFI, sets a start date and SFTP root path, and **uploads the RFI already sent to the LFI** — the app never generates or sends an RFI itself. Reverses an earlier assumption that the RFI would be auto-generated from the license-type template.
+83. **Navigation model: tabs, not a phase-stepper**, behind a permanent sidebar (user/role details anchored at the bottom). Tabs unlock by data availability, not a forward-only phase gate, since earlier-phase artifacts stay live reference material later and the AG/pre-exit revision loops (ADR-0010) aren't strictly linear.
+84. **Severity/deadline rubric editor is global** (per license type, not per-examination), edited from a standalone Settings/Admin area — consistent with ADR-0020's "shared, versioned platform service" framing. Access: Lead/Approver; no new admin role.
+85. **RFI upload auto-parses into the expected question list**, shown back as an editable table to confirm/correct before setup finalizes — insurance against a hand-edited RFI drifting from the standard spreadsheet template.
+86. **SFTP path is one root path per LFI examination cycle** — the fixed per-license-type folder structure (decision 12) is expected underneath it, so setup needs no manual folder-mapping step.
+87. **Transport choice (Shared Workspace vs. future Smart Portal) is platform-wide config, not a per-examination field** — a transport picker on every setup screen would leak the Ingestion Adapter's abstraction (ADR-0006) back into the UI.
+88. **Sidebar tab list, finalized**: Setup → Intake → Gap Analysis → Meeting → Findings → Approval → Audit Log. Kept separate despite the supervision-questions bridge between Gap Analysis and Meeting, since merging would obscure the sufficiency-check gate's "new round-trip" nature.
+
+**Access, data ownership, and portfolio detail**
+89. **RBAC visibility model: one screen per tab, gated actions — not parallel UIs per role.** Examiner and Lead/Approver see identical data/layout; sign-off controls render only for Lead/Approver.
+90. **This app owns a lightweight LFI registry** (name, license type, SFTP root, contacts) rather than integrating against an unnamed external FPSD system of record — none has been named anywhere in the decision log.
+91. **Notifications are in-app only for v1** — SLA breaches/backlog surface via the portfolio home screen's counts (agent-specifications.md); no email/notification infrastructure in v1.
+92. **Portfolio home columns finalized**: LFI name, license type, current phase, SLA countdown/breach flag, open-checkpoint count, last-activity timestamp, plus decision 81's status filter.
+
+**Intake and Gap Analysis tabs**
+93. **Intake tab supports a manual override** (Lead/Approver only, required free-text reason) to mark a `suspicious`/`pending` item `submitted` by hand — logged as a distinct event type from the automated status.
+94. **Document access is download/open via the Ingestion Adapter, not a custom in-app viewer.**
+95. **Gap Analysis resolution actions, finalized as two**: (a) accept as `insufficient_grounding` (becomes a supervision question), (b) manually assert a verdict with a human-supplied citation (human-asserted, not model-asserted). A third option — targeted re-run of Compliance Analyst on a single item — was considered and dropped for v1; nothing in the LangGraph shape supports partial re-invocation from the UI.
+96. **"Gap analysis complete and examiner-reviewed" (Meeting Facilitator's trigger, agent-specifications.md) is automatically inferred**, not a separate sign-off button — true once every flagged item has a decision-95 resolution and every RFI question has a `compliance_verdicts[]` entry.
+
+**Meeting tab**
+97. **Supervision-question sign-off is per-question**, not whole-list — matches the human-agreement-rate metric's per-item design (ADR-0016).
+98. **Meeting minutes are submitted after the fact, one-shot** — not typed live during the meeting.
+99. **New HITL checkpoint added: Further-submission review.** `further_submission_requests[]` (extracted from meeting minutes) previously had no checkpoint at all — a real gap, since the supervision-question sign-off happens *before* the meeting and covers a different artifact. Raised by Meeting Facilitator, resolved by Lead/Approver, per-item accept/edit/reject like decision 97, before the list is final. Added as a new row to `agent-specifications.md`'s HITL table.
+100. **LFI communication of further-submission requests stays entirely out of the app's scope** — same as the RFI (decision 82), the app never messages the LFI; the examiner relays the list manually. **Automated intake tracking for round-2 documents is explicitly kept** — user's clarification: whatever the LFI submits back, even multiple documents, still flows through the same Intake Tracker mechanism as round-1 documents, so a second round's volume doesn't cost examiners manual-tracking time. Decision 99's checkpoint and the auto-extraction both stand unchanged.
+
+**Findings and Approval tabs**
+101. **Findings sign-off is per-finding**, with qualitative and quantitative tracks in visually separate sections — reinforces ADR-0009/0011's rule that the two tracks are never reconciled against each other.
+102. **Transmittal letter / pre-exit deck stay download-only in v1** (no in-browser rendering); the sign-off checkpoint covers `findings[]` data, not the rendered template. **In-app rendering is an explicit deferred v2 candidate, not discarded** — user asked this be kept as future scope.
+103. **AG status reported via dropdown + required free-text on `changes_requested`** — the raw text is the input to the LLM-summarization-into-redraft-notes step (agent-specifications.md, Critical Finding #1).
+104. **AG Feedback Review checkpoint shows raw feedback and the AI summary side-by-side**, with the summary (not the raw text) editable — showing only the summary would defeat the guardrail's purpose.
+105. **Pre-exit concerns loop reuses the Findings tab's redraft/sign-off flow** — no separate "Exit Deck" tab; the exit deck (CONTEXT.md) is the same artifact relabeled once produced via this loop.
+
+**Audit, lifecycle, and cross-cutting**
+106. **Audit Log tab shows identical full detail to all three roles within one examination** — the Auditor distinction is scope, not detail: Examiner/Lead-Approver reach it only within an assigned examination, while Auditor gets a portfolio-wide, cross-examination Audit Log view as their effective landing page.
+107. **Examination auto-closes (Active → Completed) the instant `preexit_status` reaches `proceeded_to_exit`** — no manual "Close Examination" button; the state is already an unambiguous, code-checkable terminal condition (ADR-0026's definition-of-done pattern).
+108. **Notice Corpus management moves fully in-app for v1** — reverses the round's initial recommendation (offline/ops ingestion). User's reasoning: no one will maintain the corpus outside the app, so it must be a real in-app capability.
+109. **Two-role RBAC (Examiner vs. Lead/Approver, decision 35) reconsidered and reaffirmed, unchanged.** User raised whether one role would do; recommendation given and unopposed: keep two — the augmentation-not-autonomy design (ADR-0003), every HITL checkpoint, ADR-0017's and ADR-0020's guardrails, and the human-agreement-rate metric (ADR-0016) all assume the drafter and approver are different people. Team-size staffing realities (one person holding both role-grants) don't require collapsing the concept itself.
+110. **Rubric editor is a simple current-state edit form**, not a version-history browser — the data stays versioned (ADR-0020), but the editor just shows "current version: vN" plus save-creates-new-version; full history stays queryable via the Audit Log tab.
+111. **Setup tab fields are editable after examination creation** (Lead/Approver only), not write-once — logged to `audit_log[]` as a distinct "setup corrected" event, same treatment as decision 93.
+112. **Login/authentication assumed to be existing CBUAE SSO** — this app consumes an authenticated session + role claim, no local user/role management screen. Flagged as an open item (which specific IdP), same treatment as ADR-0019's `secrets_manager` and the deployment platform (ADR-0015).
+113. **Notice ingestion auto-runs OCR + auto-segments into clauses**, shown for human review/correction before anything becomes citable — same pattern as decision 85, required by ADR-0004's zero-tolerance grounding rule.
+114. **Notice Corpus management access is Lead/Approver, no new Compliance/Legal Content Owner role** — same reasoning as decision 84.
+115. **Supersession-graph review stays reactive, inline within Gap Analysis** (decision 95's `needs_human_review` path) — no standalone corpus-wide supersession browser in v1.
+116. **In-app metrics/observability dashboard stays out of v1** — ADR-0016 already decided audit/metrics consumption happens via Langfuse/BI-tool queries, specifically to avoid a second reporting surface. **Flagged as an explicit future-scope candidate** — a single unified metrics view may be worth adding in a later version, per user.
+117. **Tool-failure surfacing: a visible "sync degraded" banner only after sustained failure** (e.g. 3 consecutive missed polling intervals), not on every transient retry (ADR-0018's backoff already handles those silently).
+
+New ADR: **ADR-0029** captures this round's structural decisions (portfolio + tabbed workspace, RBAC-gated single-screen model, setup-is-upload-not-generation, Notice Corpus brought in-app, new Further-submission-review checkpoint). Per-screen prose detail lives in `agent-specifications.md`'s Examiner Dashboard section and the updated HITL table, not a second document.
+
 ---
 
 ## Open items (not yet decided)
@@ -206,6 +261,10 @@ Only the review's 2 Low findings (cost model, independent model-risk/compliance 
 - Supersession confidence threshold (decision 30) and HITL SLA durations (decision 54) — both "tune empirically once real cases exist," not final numbers.
 - ADR-0022's capacity numbers — explicit placeholders, need real annual examination count/concurrency from the examiner team before any GPU procurement decision.
 - On-prem platform choice (VMs vs. K8s/OpenShift) and model choice (Qwen Coder vs. gpt-oss-120b, decision 49) — both still open.
+- Decision 99's Further-submission review checkpoint needs its SLA duration set — same "tune empirically" treatment as decision 30/54, no number proposed yet.
+- Decision 108's Notice Corpus management screen (upload → auto-OCR/segment → human confirm) is scoped as a direction but has no tool contract yet.
+- Decision 112's SSO/IdP choice is an open item for CBUAE IT, same treatment as the secrets_manager product choice and the deployment platform.
+- Decision 116's unified in-app metrics view — explicitly deferred to a future version, not scoped further now.
 
 ## ADR cross-reference
 
@@ -239,3 +298,4 @@ Only the review's 2 Low findings (cost model, independent model-risk/compliance 
 | 0026 | No dedicated Verifier agent | 77, 78 |
 | 0027 | Notice corpus storage strategy confirmed | 79 |
 | 0028 | External intelligence scope split | 80 |
+| 0029 | Examiner Dashboard userflow architecture | 81–92, 99, 106, 108, 109, 112 |
