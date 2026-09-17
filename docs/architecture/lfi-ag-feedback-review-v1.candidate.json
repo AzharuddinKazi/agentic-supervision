@@ -1,0 +1,141 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "AG Feedback Review — Redraft Guardrail",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 534]
+  },
+  "lanes": [
+    { "id": "external", "label": "AG Showcase (Human)" },
+    { "id": "gated", "label": "Lead/Approver" },
+    { "id": "system", "label": "Approval Coordinator / Findings Author" }
+  ],
+  "phases": [
+    { "id": "capture", "label": "Capture", "fromCol": 0, "toCol": 1 },
+    { "id": "summarize", "label": "LLM summarize", "fromCol": 2, "toCol": 2 },
+    { "id": "checkpoint", "label": "Human checkpoint", "fromCol": 3, "toCol": 3, "variant": "security" },
+    { "id": "redraft", "label": "Redraft loop", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": [
+    "ag_showcase",
+    "raw_feedback",
+    "summarize",
+    "feedback_review",
+    "redraft",
+    "awaiting_ag"
+  ],
+  "nodes": [
+    {
+      "id": "ag_showcase",
+      "lane": "external",
+      "col": 0,
+      "type": "external",
+      "label": "AG Showcase",
+      "sublabel": "feedback given verbally",
+      "width": 136
+    },
+    {
+      "id": "raw_feedback",
+      "lane": "gated",
+      "col": 1,
+      "type": "frontend",
+      "label": "Raw Feedback",
+      "sublabel": "required free-text",
+      "tag": "what the AG actually said",
+      "width": 136
+    },
+    {
+      "id": "summarize",
+      "lane": "system",
+      "col": 2,
+      "type": "messagebus",
+      "label": "Summarize Feedback",
+      "sublabel": "descriptive only",
+      "tag": "Approval Coordinator",
+      "width": 136
+    },
+    {
+      "id": "feedback_review",
+      "lane": "gated",
+      "col": 3,
+      "type": "security",
+      "label": "AG Feedback Review",
+      "sublabel": "raw + summary, side-by-side",
+      "tag": "only summary editable",
+      "width": 136
+    },
+    {
+      "id": "redraft",
+      "lane": "system",
+      "col": 4,
+      "type": "backend",
+      "label": "Findings Redraft",
+      "sublabel": "triggered on confirm only",
+      "width": 136
+    },
+    {
+      "id": "awaiting_ag",
+      "lane": "external",
+      "col": 5,
+      "type": "external",
+      "label": "Back to Awaiting AG",
+      "sublabel": "resubmit for review",
+      "tag": "loop, also used for pre-exit",
+      "width": 136
+    }
+  ],
+  "edges": [
+    {
+      "id": "showcase-raw",
+      "from": "ag_showcase",
+      "to": "raw_feedback",
+      "label": "Changes Requested",
+      "variant": "default"
+    },
+    {
+      "id": "raw-summarize",
+      "from": "raw_feedback",
+      "to": "summarize",
+      "variant": "default"
+    },
+    {
+      "id": "summarize-review",
+      "from": "summarize",
+      "to": "feedback_review",
+      "label": "not auto-applied",
+      "variant": "emphasis"
+    },
+    {
+      "id": "review-redraft",
+      "from": "feedback_review",
+      "to": "redraft",
+      "label": "confirmed",
+      "variant": "emphasis"
+    },
+    {
+      "id": "redraft-awaiting",
+      "from": "redraft",
+      "to": "awaiting_ag",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Guardrail (ADR-0017, closes Critical Finding #1)",
+      "items": [
+        "The LLM-summarized feedback is never passed directly to Findings Author — it surfaces as its own reviewable artifact, and only Lead/Approver confirmation triggers the redraft",
+        "Closes the gap where an ungrounded AI summary could change a regulatory document on something no human actually said. \"Approved\" needs no elaboration (decision 103) and isn't drawn here"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "The pre-exit concerns loop reuses this exact redraft/sign-off flow rather than a separate \"Exit Deck\" screen (decision 105)",
+        "Full states: drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → redraft → awaiting_ag → approved"
+      ]
+    }
+  ]
+}

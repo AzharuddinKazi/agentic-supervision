@@ -1,0 +1,138 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Further-Submission Review — New HITL Checkpoint (ADR-0029, decision 99)",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "system", "label": "Meeting Facilitator" },
+    { "id": "gated", "label": "Lead/Approver (gated review)" },
+    { "id": "external", "label": "LFI / Intake Tracker" }
+  ],
+  "phases": [
+    { "id": "draft", "label": "Drafted", "fromCol": 0, "toCol": 0 },
+    { "id": "review", "label": "Per-item review", "fromCol": 1, "toCol": 2, "variant": "emphasis" },
+    { "id": "relay", "label": "Manual relay", "fromCol": 3, "toCol": 3, "variant": "dashed" },
+    { "id": "intake", "label": "Round-2 intake", "fromCol": 4, "toCol": 5 }
+  ],
+  "mainPath": [
+    "requests_drafted",
+    "review",
+    "list_final",
+    "relay",
+    "intake_round2",
+    "sufficiency_feed"
+  ],
+  "nodes": [
+    {
+      "id": "requests_drafted",
+      "lane": "system",
+      "col": 0,
+      "type": "backend",
+      "label": "Requests Drafted",
+      "sublabel": "further_submission_requests[]",
+      "width": 136
+    },
+    {
+      "id": "review",
+      "lane": "gated",
+      "col": 1,
+      "type": "security",
+      "label": "Per-Item Review",
+      "sublabel": "accept / edit / reject",
+      "tag": "new HITL, decision 99",
+      "width": 136
+    },
+    {
+      "id": "list_final",
+      "lane": "gated",
+      "col": 2,
+      "type": "backend",
+      "label": "List Finalized",
+      "sublabel": "every item resolved",
+      "width": 136
+    },
+    {
+      "id": "relay",
+      "lane": "external",
+      "col": 3,
+      "type": "external",
+      "label": "Examiner Relays",
+      "sublabel": "manual, like the RFI",
+      "tag": "app never messages LFI",
+      "width": 136
+    },
+    {
+      "id": "intake_round2",
+      "lane": "external",
+      "col": 4,
+      "type": "cloud",
+      "label": "Round-2 Intake",
+      "sublabel": "same Intake Tracker",
+      "tag": "auto-tracked, decision 100",
+      "width": 136
+    },
+    {
+      "id": "sufficiency_feed",
+      "lane": "system",
+      "col": 5,
+      "type": "backend",
+      "label": "→ Sufficiency Check",
+      "sublabel": "phase2-meeting-v1.html",
+      "width": 136
+    }
+  ],
+  "edges": [
+    {
+      "id": "drafted-review",
+      "from": "requests_drafted",
+      "to": "review",
+      "variant": "default"
+    },
+    {
+      "id": "review-final",
+      "from": "review",
+      "to": "list_final",
+      "label": "every item resolved",
+      "variant": "emphasis"
+    },
+    {
+      "id": "final-relay",
+      "from": "list_final",
+      "to": "relay",
+      "variant": "default"
+    },
+    {
+      "id": "relay-intake",
+      "from": "relay",
+      "to": "intake_round2",
+      "label": "LFI submits round-2 docs",
+      "variant": "dashed"
+    },
+    {
+      "id": "intake-sufficiency",
+      "from": "intake_round2",
+      "to": "sufficiency_feed",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "A real gap this round closed (decision 99)",
+      "items": [
+        "further_submission_requests[] previously had no sign-off checkpoint at all — a genuine gap, since the pre-meeting supervision-question sign-off covers a different artifact and happens before the meeting. Raised by Meeting Facilitator, resolved by Lead/Approver, same per-item accept/edit/reject pattern as every other checkpoint",
+        "Round-2 documents still flow through the same automated Intake Tracker as round-1 (decision 100) — kept explicitly automated so a second round doesn't cost examiners manual-tracking time"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Covers only the gap between draft and relay. The Sufficiency Check (a separate, later gate judging whether round-2 responses actually close the meeting's gaps) is drawn in lfi-workflow-phase2-meeting-v1.html, not repeated here",
+        "SLA duration not yet set for this checkpoint — tune empirically once real cases exist, same treatment as decisions 30/54"
+      ]
+    }
+  ]
+}

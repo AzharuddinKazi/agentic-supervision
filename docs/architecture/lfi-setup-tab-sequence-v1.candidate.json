@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Setup Tab — Examination Creation Call Sequence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action / tool call" },
+        "emphasis": { "label": "Finalizing write" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "human, Setup tab" },
+    { "id": "examiner_app", "type": "frontend", "label": "Examiner Dashboard", "sublabel": "Setup tab" },
+    { "id": "rfi_parser", "type": "cloud", "label": "RFI Parser", "sublabel": "deterministic tool" },
+    { "id": "rfi_store", "type": "database", "label": "RFI Store", "sublabel": "Fraud DB" }
+  ],
+  "segments": [
+    { "from": 150, "to": 298, "label": "Create + upload RFI" },
+    { "from": 314, "to": 444, "label": "Auto-parse + human confirm" },
+    { "from": 460, "to": 578, "label": "Finalize (editable after)" }
+  ],
+  "messages": [
+    { "from": "lead_approver", "to": "examiner_app", "y": 180, "label": "pick LFI, set start date + SFTP root", "variant": "default" },
+    { "from": "lead_approver", "to": "examiner_app", "y": 222, "label": "upload RFI (already sent to LFI)", "variant": "emphasis" },
+    { "from": "examiner_app", "to": "rfi_parser", "y": 264, "label": "auto-parse into question list", "variant": "default" },
+
+    { "from": "rfi_parser", "to": "examiner_app", "y": 316, "label": "draft: ID + text + clause ref", "variant": "return" },
+    { "from": "examiner_app", "to": "lead_approver", "y": 358, "label": "editable table for confirm/correct", "variant": "default" },
+    { "from": "lead_approver", "to": "examiner_app", "y": 400, "label": "confirm/correct questions", "variant": "return", "note": "setup finalizes only after this confirm" },
+
+    { "from": "examiner_app", "to": "rfi_store", "y": 462, "label": "write confirmed question list", "variant": "emphasis" },
+    { "from": "rfi_store", "to": "examiner_app", "y": 504, "label": "stored", "variant": "return" },
+    { "from": "examiner_app", "to": "lead_approver", "y": 546, "label": "setup complete — Intake unlocks", "variant": "default" }
+  ],
+  "activations": [
+    { "participant": "examiner_app", "from": 170, "to": 556, "type": "frontend" },
+    { "participant": "rfi_parser", "from": 254, "to": 326, "type": "cloud" },
+    { "participant": "rfi_store", "from": 452, "to": 514, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Setup is upload, not generation (ADR-0029; decisions 82, 85, 111)",
+      "items": [
+        "The app never generates or sends the RFI — it uploads the document already sent to the LFI outside this app, auto-parses it, and requires an explicit human confirm before setup finalizes, same \"auto-derive, human confirms\" pattern as Notice Corpus Manager",
+        "Setup fields stay editable after creation (Lead/Approver only) — write-once would force a full re-creation over the most likely failure mode, a wrong SFTP path noticed only once documents fail to appear; edits log as a distinct \"setup corrected\" audit event"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Covers only examination creation (decisions 82, 85, 86); the SFTP root's fixed per-license-type folder structure and the Ingestion Adapter's own poll/fetch cycle are drawn in lfi-pipeline-v1.html, not repeated here",
+        "Closest standard: a UML sequence diagram — archify's sequence type supports activations/lifelines/return messages natively, so this maps cleanly with no notation gap"
+      ]
+    }
+  ]
+}

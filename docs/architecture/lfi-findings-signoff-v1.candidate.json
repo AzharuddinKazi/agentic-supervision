@@ -1,0 +1,130 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Findings Sign-off — Qual/Quant Tracks Never Merged (ADR-0009/0011, decision 101)",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "qual", "label": "Qualitative Track" },
+    { "id": "quant", "label": "Quantitative Track" },
+    { "id": "gated", "label": "Lead/Approver" }
+  ],
+  "phases": [
+    { "id": "draft", "label": "Drafted", "fromCol": 0, "toCol": 0 },
+    { "id": "shown", "label": "Shown separately", "fromCol": 1, "toCol": 1, "variant": "emphasis" },
+    { "id": "signoff", "label": "Per-finding sign-off", "fromCol": 2, "toCol": 2, "variant": "security" },
+    { "id": "complete", "label": "Complete", "fromCol": 3, "toCol": 4 }
+  ],
+  "mainPath": [
+    "qual_draft",
+    "qual_section",
+    "qual_signoff",
+    "both_complete",
+    "letter_drafting"
+  ],
+  "nodes": [
+    {
+      "id": "qual_draft",
+      "lane": "qual",
+      "col": 0,
+      "type": "backend",
+      "label": "Qualitative Draft",
+      "sublabel": "compliance_verdicts[]",
+      "width": 136
+    },
+    {
+      "id": "quant_draft",
+      "lane": "quant",
+      "col": 0,
+      "type": "backend",
+      "label": "Quantitative Draft",
+      "sublabel": "EDM + compute()",
+      "width": 136
+    },
+    {
+      "id": "qual_section",
+      "lane": "qual",
+      "col": 1,
+      "type": "frontend",
+      "label": "Qualitative Section",
+      "sublabel": "separate, Findings tab",
+      "width": 136
+    },
+    {
+      "id": "quant_section",
+      "lane": "quant",
+      "col": 1,
+      "type": "frontend",
+      "label": "Quantitative Section",
+      "sublabel": "separate, Findings tab",
+      "width": 136
+    },
+    {
+      "id": "qual_signoff",
+      "lane": "qual",
+      "col": 2,
+      "type": "security",
+      "label": "Qual Sign-off",
+      "sublabel": "per-finding, accept/edit/reject",
+      "width": 136
+    },
+    {
+      "id": "quant_signoff",
+      "lane": "quant",
+      "col": 2,
+      "type": "security",
+      "label": "Quant Sign-off",
+      "sublabel": "per-finding, accept/edit/reject",
+      "width": 136
+    },
+    {
+      "id": "both_complete",
+      "lane": "gated",
+      "col": 3,
+      "type": "backend",
+      "label": "Both Signed Off",
+      "sublabel": "never reconciled together",
+      "width": 136
+    },
+    {
+      "id": "letter_drafting",
+      "lane": "gated",
+      "col": 4,
+      "type": "backend",
+      "label": "Transmittal Letter",
+      "sublabel": "→ Approval tab",
+      "tag": "download-only in v1",
+      "width": 136
+    }
+  ],
+  "edges": [
+    { "id": "qdraft-qsection", "from": "qual_draft", "to": "qual_section", "variant": "default" },
+    { "id": "qsection-qsignoff", "from": "qual_section", "to": "qual_signoff", "variant": "default" },
+    { "id": "qsignoff-complete", "from": "qual_signoff", "to": "both_complete", "label": "qual track complete", "variant": "emphasis" },
+
+    { "id": "kdraft-ksection", "from": "quant_draft", "to": "quant_section", "variant": "default" },
+    { "id": "ksection-ksignoff", "from": "quant_section", "to": "quant_signoff", "variant": "default" },
+    { "id": "ksignoff-complete", "from": "quant_signoff", "to": "both_complete", "label": "quant track complete", "variant": "emphasis" },
+
+    { "id": "complete-letter", "from": "both_complete", "to": "letter_drafting", "variant": "default" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Why the tracks stay separate (ADR-0009/0011)",
+      "items": [
+        "Drafted, shown, and signed off in visually separate sections, never one merged list — a shared list would visually imply a comparison the two tracks must never make",
+        "\"Both Signed Off\" is a conjunction of two independent completions, not a reconciliation — it never checks that the tracks agree"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Per-finding severity guardrail (ADR-0017/0020) is code-enforced, not shown here — see agent-specifications.md",
+        "Transmittal letter and pre-exit deck stay download-only in v1 (decision 102)"
+      ]
+    }
+  ]
+}
