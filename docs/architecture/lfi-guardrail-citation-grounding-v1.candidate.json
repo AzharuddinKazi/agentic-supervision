@@ -33,7 +33,7 @@
     { "from": "notice_corpus", "to": "gap_analysis", "y": 222, "label": "exact clause match", "variant": "return" },
     { "from": "gap_analysis", "to": "supersession", "y": 264, "label": "check(clause_id)", "variant": "default" },
     { "from": "supersession", "to": "gap_analysis", "y": 306, "label": "superseding clause + confidence score", "variant": "return" },
-    { "from": "gap_analysis", "to": "audit_trail", "y": 348, "label": "log grounded verdict + citation", "variant": "emphasis" },
+    { "from": "gap_analysis", "to": "audit_trail", "y": 348, "label": "log_checkpoint(grounded verdict + citation)", "variant": "emphasis" },
 
     { "from": "gap_analysis", "to": "notice_corpus", "y": 400, "label": "get_clause(clause_id) — attempt 1", "variant": "default" },
     { "from": "notice_corpus", "to": "gap_analysis", "y": 442, "label": "timeout / connection error", "variant": "dashed", "note": "distinct outcome from \"no match\" — never collapsed into it" },
@@ -42,7 +42,7 @@
 
     { "from": "gap_analysis", "to": "notice_corpus", "y": 568, "label": "get_clause(clause_id)", "variant": "default" },
     { "from": "notice_corpus", "to": "gap_analysis", "y": 610, "label": "no high-confidence match — real absence, not a timeout", "variant": "return" },
-    { "from": "gap_analysis", "to": "audit_trail", "y": 652, "label": "log insufficient_grounding (never a best-guess verdict)", "variant": "emphasis" },
+    { "from": "gap_analysis", "to": "audit_trail", "y": 652, "label": "log_checkpoint(insufficient_grounding)", "variant": "emphasis" },
     { "from": "gap_analysis", "to": "examiner_dashboard", "y": 694, "label": "surface for human review", "variant": "emphasis" }
   ],
   "activations": [
@@ -69,7 +69,7 @@
       "title": "Retry policy",
       "items": [
         "Bounded retry with backoff on transient failures (timeout, connection error) before either recovering or exhausting attempts — full policy in tool-contracts.md",
-        "supersession_graph.check() runs after a grounded citation is confirmed, not before — see agent-specifications.md's sequencing note"
+        "supersession_graph.check() runs after the raw clause match, before the verdict is finalized/logged — full ordering rationale in agent-specifications.md's Compliance Analyst sequencing note (fixes audit 3.6)"
       ]
     },
     {

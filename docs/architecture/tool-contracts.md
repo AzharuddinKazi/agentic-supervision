@@ -6,6 +6,16 @@ Every tool named in `agent-specifications.md` gets a real contract here: input s
 
 ---
 
+## `log_checkpoint(state_before, state_after, actor, event_type, resolution?, edit_diff?, reason_code?)`
+**Used by**: every agent, at every `interrupt()` resolution and every state-machine transition (`agent-specifications.md`'s Audit Trail Store section). The single write path into `audit_log[]` — no agent writes an `AuditLogEntry` any other way (fixes Principal Engineer audit 3.2's finding that `lfi-guardrail-citation-grounding-v1` drew a direct `gap_analysis → audit_trail` message instead of routing through this call; that diagram is corrected to route through `log_checkpoint()` like everywhere else).
+**Input**: `{ state_before: object, state_after: object, actor: { type: "agent"|"human", name: string, user_id?: string }, event_type: string, resolution?: "accept"|"edit"|"reject", edit_diff?: object, reason_code?: string }` — field meanings match the `AuditLogEntry` schema in `agent-specifications.md`. `idempotency_key`, `prev_hash`, and `entry_hash` are **not** caller-supplied; this call derives them internally from the current LangGraph node-execution context and the examination's existing chain tail.
+**Output (ok)**: `{ status: "ok", entry_id: string, entry_hash: string }`.
+**Output (error)**: `{ status: "error", reason: "duplicate_idempotency_key" | "chain_integrity_violation" }` — `duplicate_idempotency_key` is a benign no-op (the entry already exists from a prior attempt at this exact node execution; the caller should treat it as success and use the returned existing `entry_id`, not retry). `chain_integrity_violation` (the computed `prev_hash` doesn't match the chain's current tail) is a correctness alarm, not a transient failure — it means either concurrent unserialized writes to the same examination's chain or actual tampering, and must halt and page, never silently retry past it.
+**Timeout**: 2s (a DB insert, not an LLM call).
+**Retry**: 3 attempts, backoff (0.5s/1s/2s), transient DB errors only — never retried on `chain_integrity_violation`.
+
+---
+
 ## `ingestion_adapter.list_documents(lfi_id)`
 **Used by**: Intake Tracker.
 **Input**: `{ lfi_id: string }`
@@ -58,7 +68,7 @@ Every tool named in `agent-specifications.md` gets a real contract here: input s
 ## `severity_rubric.lookup(finding, rubric_version?)`
 **Used by**: Findings Author. **Shared, versioned platform service** (ADR-0020) — not owned by any one agent.
 **Input**: `{ finding: FindingSummary, rubric_version?: string }` — omitting `rubric_version` uses the current published version.
-**Output (ok)**: `{ status: "ok", severity: "low"|"medium"|"high"|"critical", deadline_days: int, rubric_version: string }` — the returned `rubric_version` is what must be persisted alongside `severity` (ADR-0020's guardrail).
+**Output (ok)**: `{ status: "ok", severity: "low"|"medium"|"high", deadline_days: int, rubric_version: string }` — the returned `rubric_version` is what must be persisted alongside `severity` (ADR-0020's guardrail). Three values, lowercase wire form of `CONTEXT.md`'s canonical High/Medium/Low — no fourth "critical" tier (fixes Principal Engineer audit 4.1, which found this contract's four-value enum silently contradicting `CONTEXT.md`'s three-value definition; a code-enforced equality guardrail on this field means the mismatch fails loudly and late otherwise).
 **Output (error)**: `{ status: "error", reason: "rubric_service_unavailable" | "no_matching_rule" }` — `no_matching_rule` means the rubric has a genuine gap for this finding type; this is a data/config issue, not a transient failure, and routes to human review (a Lead/Approver assigns severity manually and this is flagged as a rubric-coverage gap to fix).
 **Timeout**: 3s (low-latency lookup service, not an LLM call).
 **Retry**: 3 attempts, backoff (0.5s/1s/2s), `rubric_service_unavailable` only.

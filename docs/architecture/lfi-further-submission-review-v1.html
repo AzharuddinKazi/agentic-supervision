@@ -5185,7 +5185,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <!-- Edge paths -->
         <path data-edge-from="requests_drafted" data-edge-to="review" data-edge-key="0" data-edge-id="drafted-review" data-composition-points="116,146;116,168;320,168;320,246;304,246" d="M 116 146 L 116 168 L 320 168 L 320 246 L 304 246" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <path data-edge-from="list_final" data-edge-to="relay" data-edge-key="1" data-edge-id="final-relay" data-composition-points="481.2,272;481.2,372;533.2,372" d="M 481.2 272 L 481.2 372 L 533.2 372" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="intake_round2" data-edge-to="sufficiency_feed" data-edge-key="2" data-edge-id="intake-sufficiency" data-composition-points="938.4000000000001,372;990.4000000000001,372;990.4000000000001,146" d="M 938.4000000000001 372 L 990.4000000000001 372 L 990.4000000000001 146" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="intake_round2" data-edge-to="sufficiency_feed" data-edge-label="round_submitted(2)" data-edge-key="2" data-edge-id="intake-sufficiency" data-composition-points="870.4000000000001,338;870.4000000000001,231;990.4000000000001,231;990.4000000000001,146" d="M 870.4000000000001 338 L 870.4000000000001 231 L 990.4000000000001 231 L 990.4000000000001 146" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <path data-edge-from="relay" data-edge-to="intake_round2" data-edge-label="LFI submits round-2 docs" data-edge-key="3" data-edge-id="relay-intake" data-composition-points="669.2,372;802.4000000000001,372" d="M 669.2 372 L 802.4000000000001 372" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
         <path data-edge-from="review" data-edge-to="list_final" data-edge-label="every item resolved" data-edge-key="4" data-edge-id="review-final" data-composition-points="236,280;236,300;481.2,300;481.2,272" d="M 236 280 L 236 300 L 481.2 300 L 481.2 272" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
 
@@ -5249,22 +5249,25 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="fine" x="601.2" y="394" class="t-external" font-size="7" text-anchor="middle">app never messages LFI</text>
         </g>
 
-        <g id="node-intake_round2" data-node-id="intake_round2" data-node-label="Round-2 Intake" tabindex="0" role="button" aria-label="Focus Round-2 Intake, same Intake Tracker, LFI / Intake Tracker › Round-2 intake" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="same Intake Tracker" data-node-tag="auto-tracked, decision 100" data-node-context="LFI / Intake Tracker › Round-2 intake">
-          <title>Round-2 Intake · same Intake Tracker · LFI / Intake Tracker › Round-2 intake · auto-tracked, decision 100</title>
+        <g id="node-intake_round2" data-node-id="intake_round2" data-node-label="Round-2 Intake" tabindex="0" role="button" aria-label="Focus Round-2 Intake, new rfi_questions[] rows, LFI / Intake Tracker › Round-2 intake" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="new rfi_questions[] rows" data-node-tag="round:2, source:further_submission" data-node-context="LFI / Intake Tracker › Round-2 intake">
+          <title>Round-2 Intake · new rfi_questions[] rows · LFI / Intake Tracker › Round-2 intake · round:2, source:further_submission</title>
           <rect x="802.4000000000001" y="338" width="136" height="68" rx="6" class="c-mask"/>
           <rect x="802.4000000000001" y="338" width="136" height="68" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(808.4000000000001 344) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="870.4000000000001" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Round-2 Intake</text>
-          <text data-detail="context" x="870.4000000000001" y="376" class="t-muted" font-size="8" text-anchor="middle">same Intake Tracker</text>
-        <text data-detail="fine" x="870.4000000000001" y="394" class="t-cloud" font-size="7" text-anchor="middle">auto-tracked, decision 100</text>
+          <text data-detail="context" x="870.4000000000001" y="376" class="t-muted" font-size="8" text-anchor="middle">new rfi_questions[] rows</text>
+        <text data-detail="fine" x="870.4000000000001" y="394" class="t-cloud" font-size="6.2" text-anchor="middle">round:2, source:further_submission</text>
         </g>
 
         <!-- Edge labels -->
 
 
-
+        <g data-detail="context" data-edge-from="intake_round2" data-edge-to="sufficiency_feed" data-edge-label="round_submitted(2)" data-edge-key="2" data-edge-id="intake-sufficiency">
+          <rect x="882.2" y="211" width="96.39999999999999" height="14" rx="3" class="c-mask"/>
+          <text x="930.4000000000001" y="221" class="t-muted" font-size="8" text-anchor="middle">round_submitted(2)</text>
+        </g>
         <g data-detail="context" data-edge-from="relay" data-edge-to="intake_round2" data-edge-label="LFI submits round-2 docs" data-edge-key="3" data-edge-id="relay-intake">
           <rect x="673.2" y="352" width="125.19999999999999" height="14" rx="3" class="c-mask"/>
           <text x="735.8000000000001" y="362" class="t-database" font-size="8" text-anchor="middle">LFI submits round-2 docs</text>
@@ -5486,8 +5489,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <h3>A real gap this round closed (decision 99)</h3>
         </div>
         <ul>
-          <li>&bull; further_submission_requests[] previously had no sign-off checkpoint at all — a genuine gap, since the pre-meeting supervision-question sign-off covers a different artifact and happens before the meeting. Raised by Meeting Facilitator, resolved by Lead/Approver, same per-item accept/edit/reject pattern as every other checkpoint</li>
-          <li>&bull; Round-2 documents still flow through the same automated Intake Tracker as round-1 (decision 100) — kept explicitly automated so a second round doesn&#39;t cost examiners manual-tracking time</li>
+          <li>&bull; further_submission_requests[] previously had no sign-off checkpoint — a genuine gap, distinct from the pre-meeting supervision-question sign-off. Raised by Meeting Facilitator, resolved by Lead/Approver, same per-item accept/edit/reject pattern as every other checkpoint</li>
+          <li>&bull; Round-2 documents flow through the same automated Intake Tracker as round-1 (decision 100): each finalized request becomes a new rfi_questions[] row (round:2, source:further_submission), firing round_submitted(2) into Sufficiency Check — not Gap Analysis&#39;s all_submitted (fixes audit 2.7)</li>
         </ul>
       </div>
 

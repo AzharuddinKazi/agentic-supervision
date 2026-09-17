@@ -8,7 +8,8 @@
   },
   "lanes": [
     { "id": "auto", "label": "Ingestion Adapter / Intake Tracker" },
-    { "id": "gated", "label": "Lead/Approver (override)" }
+    { "id": "gated", "label": "Lead/Approver — override" },
+    { "id": "gated2", "label": "Lead/Approver — resubmit" }
   ],
   "phases": [
     { "id": "ingest", "label": "Ingest + check", "fromCol": 0, "toCol": 1 },
@@ -51,6 +52,16 @@
       "width": 136
     },
     {
+      "id": "resubmission",
+      "lane": "gated2",
+      "col": 2,
+      "type": "security",
+      "label": "Request Resubmission",
+      "sublabel": "reverts to pending",
+      "tag": "true positive, not overridden",
+      "width": 136
+    },
+    {
       "id": "marked_submitted",
       "lane": "auto",
       "col": 3,
@@ -73,6 +84,7 @@
   "edges": [
     { "id": "ingest-check", "from": "doc_ingested", "to": "status_check", "variant": "default" },
     { "id": "check-override", "from": "status_check", "to": "override", "label": "false negative", "variant": "security", "role": "branch" },
+    { "id": "check-resubmission", "from": "status_check", "to": "resubmission", "label": "confirmed malformed", "variant": "security", "role": "branch" },
     { "id": "check-submitted", "from": "status_check", "to": "marked_submitted", "label": "ok", "variant": "emphasis" },
     { "id": "override-submitted", "from": "override", "to": "marked_submitted", "label": "reason logged", "variant": "emphasis" },
     { "id": "submitted-access", "from": "marked_submitted", "to": "doc_access", "variant": "default" }
@@ -82,8 +94,9 @@
       "dot": "violet",
       "title": "Manual override (decision 93)",
       "items": [
-        "Filename/format false negatives (scanned docs, renamed files) are common enough to cause real friction — the override lets Lead/Approver mark a suspicious/pending item submitted by hand, with a required reason",
-        "Logged as a distinct event type from the automated status, not blended into it — the audit trail always shows whether a status came from the machine check or a human override"
+        "Filename/format false negatives (scanned docs, renamed files) are common enough to cause real friction — the override lets Lead/Approver mark a suspicious item submitted by hand, with a required reason",
+        "Logged as a distinct event type from the automated status, not blended into it — the audit trail always shows whether a status came from the machine check or a human override",
+        "\"suspicious\" is never terminal (fixes Principal Engineer audit 2.11): a confirmed true positive routes to Request Resubmission instead, reverting intake_status to pending — the LFI must resubmit before all_submitted can fire"
       ]
     },
     {

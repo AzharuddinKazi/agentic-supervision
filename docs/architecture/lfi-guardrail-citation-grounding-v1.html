@@ -5220,11 +5220,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </g>
         </g>
 
-        <g data-edge-from="gap_analysis" data-edge-to="audit_trail" data-edge-label="log grounded verdict + citation" data-edge-key="4">
+        <g data-edge-from="gap_analysis" data-edge-to="audit_trail" data-edge-label="log_checkpoint(grounded verdict + citation)" data-edge-key="4">
           <path data-composition-edge-from="gap_analysis" data-composition-edge-to="audit_trail" data-composition-points="134.5,348;620.75,348" d="M 134.5 348 L 620.75 348" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
-          <rect x="291.025" y="328" width="173.20000000000002" height="16" rx="3" class="c-mask"/>
-          <text x="377.625" y="338" class="t-backend" font-size="9" text-anchor="middle">log grounded verdict + citation</text>
+          <rect x="259.825" y="328" width="235.6" height="16" rx="3" class="c-mask"/>
+          <text x="377.625" y="338" class="t-backend" font-size="9" text-anchor="middle">log_checkpoint(grounded verdict + citation)</text>
         </g>
         </g>
 
@@ -5277,11 +5277,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </g>
         </g>
 
-        <g data-edge-from="gap_analysis" data-edge-to="audit_trail" data-edge-label="log insufficient_grounding (never a best-guess verdict)" data-edge-key="11">
+        <g data-edge-from="gap_analysis" data-edge-to="audit_trail" data-edge-label="log_checkpoint(insufficient_grounding)" data-edge-key="11">
           <path data-composition-edge-from="gap_analysis" data-composition-edge-to="audit_trail" data-composition-points="134.5,652;620.75,652" d="M 134.5 652 L 620.75 652" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
-          <rect x="228.625" y="632" width="298" height="16" rx="3" class="c-mask"/>
-          <text x="377.625" y="642" class="t-backend" font-size="9" text-anchor="middle">log insufficient_grounding (never a best-guess verdict)</text>
+          <rect x="272.825" y="632" width="209.6" height="16" rx="3" class="c-mask"/>
+          <text x="377.625" y="642" class="t-backend" font-size="9" text-anchor="middle">log_checkpoint(insufficient_grounding)</text>
         </g>
         </g>
 
@@ -5599,7 +5599,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <ul>
           <li>&bull; Bounded retry with backoff on transient failures (timeout, connection error) before either recovering or exhausting attempts — full policy in tool-contracts.md</li>
-          <li>&bull; supersession_graph.check() runs after a grounded citation is confirmed, not before — see agent-specifications.md&#39;s sequencing note</li>
+          <li>&bull; supersession_graph.check() runs after the raw clause match, before the verdict is finalized/logged — full ordering rationale in agent-specifications.md&#39;s Compliance Analyst sequencing note (fixes audit 3.6)</li>
         </ul>
       </div>
 

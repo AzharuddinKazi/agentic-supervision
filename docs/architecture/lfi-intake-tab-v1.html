@@ -5160,7 +5160,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / Ingestion Adapter / Intake Tracker</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="178" width="822" height="106" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="200" class="t-dim" font-size="10" font-weight="600">02 / Lead/Approver (override)</text>
+        <text x="54" y="200" class="t-dim" font-size="10" font-weight="600">02 / Lead/Approver — override</text>
+
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-2" x="40" y="304" width="822" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="54" y="326" class="t-dim" font-size="10" font-weight="600">03 / Lead/Approver — resubmit</text>
 
         <!-- Phase headers -->
         <line x1="70" y1="35" x2="326" y2="35" class="a-default" stroke-width="1.1"/>
@@ -5178,10 +5181,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
         <!-- Edge paths -->
         <path data-edge-from="status_check" data-edge-to="override" data-edge-label="false negative" data-edge-key="0" data-edge-id="check-override" data-composition-points="280,146;280,168;400,168;400,212" d="M 280 146 L 280 168 L 400 168 L 400 212" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
-        <path data-edge-from="status_check" data-edge-to="marked_submitted" data-edge-label="ok" data-edge-key="1" data-edge-id="check-submitted" data-composition-points="348,120;434,120;434,162;520,162;520,146" d="M 348 120 L 434 120 L 434 162 L 520 162 L 520 146" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="doc_ingested" data-edge-to="status_check" data-edge-key="2" data-edge-id="ingest-check" data-composition-points="184,120;212,120" d="M 184 120 L 212 120" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="override" data-edge-to="marked_submitted" data-edge-label="reason logged" data-edge-key="3" data-edge-id="override-submitted" data-composition-points="400,280;400,300;520,300;520,146" d="M 400 280 L 400 300 L 520 300 L 520 146" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="marked_submitted" data-edge-to="doc_access" data-edge-key="4" data-edge-id="submitted-access" data-composition-points="588,120;616,120" d="M 588 120 L 616 120" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="status_check" data-edge-to="resubmission" data-edge-label="confirmed malformed" data-edge-key="1" data-edge-id="check-resubmission" data-composition-points="280,146;280,426;400,426;400,406" d="M 280 146 L 280 426 L 400 426 L 400 406" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+        <path data-edge-from="status_check" data-edge-to="marked_submitted" data-edge-label="ok" data-edge-key="2" data-edge-id="check-submitted" data-composition-points="348,120;434,120;434,162;520,162;520,146" d="M 348 120 L 434 120 L 434 162 L 520 162 L 520 146" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="doc_ingested" data-edge-to="status_check" data-edge-key="3" data-edge-id="ingest-check" data-composition-points="184,120;212,120" d="M 184 120 L 212 120" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="override" data-edge-to="marked_submitted" data-edge-label="reason logged" data-edge-key="4" data-edge-id="override-submitted" data-composition-points="400,280;400,300;520,300;520,146" d="M 400 280 L 400 300 L 520 300 L 520 146" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="marked_submitted" data-edge-to="doc_access" data-edge-key="5" data-edge-id="submitted-access" data-composition-points="588,120;616,120" d="M 588 120 L 616 120" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
 
         <!-- Nodes -->
         <g id="node-doc_ingested" data-node-id="doc_ingested" data-node-label="Document Ingested" tabindex="0" role="button" aria-label="Focus Document Ingested, via Ingestion Adapter, Ingestion Adapter / Intake Tracker › Ingest + check" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="via Ingestion Adapter" data-node-context="Ingestion Adapter / Intake Tracker › Ingest + check">
@@ -5230,8 +5234,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="fine" x="684" y="142" class="t-external" font-size="7" text-anchor="middle">no custom viewer, dec. 94</text>
         </g>
 
-        <g id="node-override" data-node-id="override" data-node-label="Manual Override" tabindex="0" role="button" aria-label="Focus Manual Override, required free-text reason, Lead/Approver (override) › Manual override" aria-pressed="false" data-node-kind="security" data-node-sublabel="required free-text reason" data-node-tag="decision 93, distinct event" data-node-context="Lead/Approver (override) › Manual override">
-          <title>Manual Override · required free-text reason · Lead/Approver (override) › Manual override · decision 93, distinct event</title>
+        <g id="node-override" data-node-id="override" data-node-label="Manual Override" tabindex="0" role="button" aria-label="Focus Manual Override, required free-text reason, Lead/Approver — override › Manual override" aria-pressed="false" data-node-kind="security" data-node-sublabel="required free-text reason" data-node-tag="decision 93, distinct event" data-node-context="Lead/Approver — override › Manual override">
+          <title>Manual Override · required free-text reason · Lead/Approver — override › Manual override · decision 93, distinct event</title>
           <rect x="332" y="212" width="136" height="68" rx="6" class="c-mask"/>
           <rect x="332" y="212" width="136" height="68" rx="6" class="c-security" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(338 218) scale(0.6875)">
@@ -5243,17 +5247,34 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="fine" x="400" y="268" class="t-security" font-size="7" text-anchor="middle">decision 93, distinct event</text>
         </g>
 
+        <g id="node-resubmission" data-node-id="resubmission" data-node-label="Request Resubmission" tabindex="0" role="button" aria-label="Focus Request Resubmission, reverts to pending, Lead/Approver — resubmit › Manual override" aria-pressed="false" data-node-kind="security" data-node-sublabel="reverts to pending" data-node-tag="true positive, not overridden" data-node-context="Lead/Approver — resubmit › Manual override">
+          <title>Request Resubmission · reverts to pending · Lead/Approver — resubmit › Manual override · true positive, not overridden</title>
+          <rect x="332" y="338" width="136" height="68" rx="6" class="c-mask"/>
+          <rect x="332" y="338" width="136" height="68" rx="6" class="c-security" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(338 344) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="400" y="359" class="t-primary" font-size="10.6" font-weight="600" text-anchor="middle">Request Resubmission</text>
+          <text data-detail="context" x="400" y="376" class="t-muted" font-size="8" text-anchor="middle">reverts to pending</text>
+        <text data-detail="fine" x="400" y="394" class="t-security" font-size="7" text-anchor="middle">true positive, not overridden</text>
+        </g>
+
         <!-- Edge labels -->
         <g data-detail="context" data-edge-from="status_check" data-edge-to="override" data-edge-label="false negative" data-edge-key="0" data-edge-id="check-override">
           <rect x="301.4" y="148" width="77.2" height="14" rx="3" class="c-mask"/>
           <text x="340" y="158" class="t-security" font-size="8" text-anchor="middle">false negative</text>
         </g>
-        <g data-detail="context" data-edge-from="status_check" data-edge-to="marked_submitted" data-edge-label="ok" data-edge-key="1" data-edge-id="check-submitted">
+        <g data-detail="context" data-edge-from="status_check" data-edge-to="resubmission" data-edge-label="confirmed malformed" data-edge-key="1" data-edge-id="check-resubmission">
+          <rect x="289.4" y="406" width="101.2" height="14" rx="3" class="c-mask"/>
+          <text x="340" y="416" class="t-security" font-size="8" text-anchor="middle">confirmed malformed</text>
+        </g>
+        <g data-detail="context" data-edge-from="status_check" data-edge-to="marked_submitted" data-edge-label="ok" data-edge-key="2" data-edge-id="check-submitted">
           <rect x="376" y="100" width="30" height="14" rx="3" class="c-mask"/>
           <text x="391" y="110" class="t-backend" font-size="8" text-anchor="middle">ok</text>
         </g>
 
-        <g data-detail="context" data-edge-from="override" data-edge-to="marked_submitted" data-edge-label="reason logged" data-edge-key="3" data-edge-id="override-submitted">
+        <g data-detail="context" data-edge-from="override" data-edge-to="marked_submitted" data-edge-label="reason logged" data-edge-key="4" data-edge-id="override-submitted">
           <rect x="423.8" y="280" width="72.4" height="14" rx="3" class="c-mask"/>
           <text x="460" y="290" class="t-backend" font-size="8" text-anchor="middle">reason logged</text>
         </g>
@@ -5261,22 +5282,22 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
         <!-- Legend -->
         <g data-legend="" data-legend-bridge="">
-          <text x="20" y="308" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Agent logic" data-legend-x="20" data-legend-baseline="328" data-legend-width="91">
-            <rect x="20" y="320" width="14" height="9" rx="2" class="c-backend" stroke-width="1"/>
-            <text x="42" y="328" class="t-muted" font-size="7.5" font-weight="500">Agent logic</text>
+          <text x="20" y="434" class="t-primary" font-size="12" font-weight="650">Legend</text>
+          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Agent logic" data-legend-x="20" data-legend-baseline="454" data-legend-width="91">
+            <rect x="20" y="446" width="14" height="9" rx="2" class="c-backend" stroke-width="1"/>
+            <text x="42" y="454" class="t-muted" font-size="7.5" font-weight="500">Agent logic</text>
           </g>
-          <g data-legend-semantic-kind="security" data-legend-kind="security" data-legend-label="Policy" data-legend-x="118" data-legend-baseline="328" data-legend-width="70">
-            <rect x="118" y="320" width="14" height="9" rx="2" class="c-security" stroke-width="1"/>
-            <text x="140" y="328" class="t-muted" font-size="7.5" font-weight="500">Policy</text>
+          <g data-legend-semantic-kind="security" data-legend-kind="security" data-legend-label="Policy" data-legend-x="118" data-legend-baseline="454" data-legend-width="70">
+            <rect x="118" y="446" width="14" height="9" rx="2" class="c-security" stroke-width="1"/>
+            <text x="140" y="454" class="t-muted" font-size="7.5" font-weight="500">Policy</text>
           </g>
-          <g data-legend-semantic-kind="cloud" data-legend-kind="cloud" data-legend-label="Cloud service" data-legend-x="195" data-legend-baseline="328" data-legend-width="100">
-            <rect x="195" y="320" width="14" height="9" rx="2" class="c-cloud" stroke-width="1"/>
-            <text x="217" y="328" class="t-muted" font-size="7.5" font-weight="500">Cloud service</text>
+          <g data-legend-semantic-kind="cloud" data-legend-kind="cloud" data-legend-label="Cloud service" data-legend-x="195" data-legend-baseline="454" data-legend-width="100">
+            <rect x="195" y="446" width="14" height="9" rx="2" class="c-cloud" stroke-width="1"/>
+            <text x="217" y="454" class="t-muted" font-size="7.5" font-weight="500">Cloud service</text>
           </g>
-          <g data-legend-semantic-kind="external" data-legend-kind="external" data-legend-label="External system" data-legend-x="302" data-legend-baseline="328" data-legend-width="109">
-            <rect x="302" y="320" width="14" height="9" rx="2" class="c-external" stroke-width="1"/>
-            <text x="324" y="328" class="t-muted" font-size="7.5" font-weight="500">External system</text>
+          <g data-legend-semantic-kind="external" data-legend-kind="external" data-legend-label="External system" data-legend-x="302" data-legend-baseline="454" data-legend-width="109">
+            <rect x="302" y="446" width="14" height="9" rx="2" class="c-external" stroke-width="1"/>
+            <text x="324" y="454" class="t-muted" font-size="7.5" font-weight="500">External system</text>
           </g>
         </g>
       </svg>
@@ -5471,8 +5492,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <h3>Manual override (decision 93)</h3>
         </div>
         <ul>
-          <li>&bull; Filename/format false negatives (scanned docs, renamed files) are common enough to cause real friction — the override lets Lead/Approver mark a suspicious/pending item submitted by hand, with a required reason</li>
+          <li>&bull; Filename/format false negatives (scanned docs, renamed files) are common enough to cause real friction — the override lets Lead/Approver mark a suspicious item submitted by hand, with a required reason</li>
           <li>&bull; Logged as a distinct event type from the automated status, not blended into it — the audit trail always shows whether a status came from the machine check or a human override</li>
+          <li>&bull; &quot;suspicious&quot; is never terminal (fixes Principal Engineer audit 2.11): a confirmed true positive routes to Request Resubmission instead, reverting intake_status to pending — the LFI must resubmit before all_submitted can fire</li>
         </ul>
       </div>
 

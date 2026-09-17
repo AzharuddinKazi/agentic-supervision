@@ -69,8 +69,8 @@
       "col": 4,
       "type": "cloud",
       "label": "Round-2 Intake",
-      "sublabel": "same Intake Tracker",
-      "tag": "auto-tracked, decision 100",
+      "sublabel": "new rfi_questions[] rows",
+      "tag": "round:2, source:further_submission",
       "width": 136
     },
     {
@@ -114,6 +114,7 @@
       "id": "intake-sufficiency",
       "from": "intake_round2",
       "to": "sufficiency_feed",
+      "label": "round_submitted(2)",
       "variant": "default"
     }
   ],
@@ -122,8 +123,8 @@
       "dot": "violet",
       "title": "A real gap this round closed (decision 99)",
       "items": [
-        "further_submission_requests[] previously had no sign-off checkpoint at all — a genuine gap, since the pre-meeting supervision-question sign-off covers a different artifact and happens before the meeting. Raised by Meeting Facilitator, resolved by Lead/Approver, same per-item accept/edit/reject pattern as every other checkpoint",
-        "Round-2 documents still flow through the same automated Intake Tracker as round-1 (decision 100) — kept explicitly automated so a second round doesn't cost examiners manual-tracking time"
+        "further_submission_requests[] previously had no sign-off checkpoint — a genuine gap, distinct from the pre-meeting supervision-question sign-off. Raised by Meeting Facilitator, resolved by Lead/Approver, same per-item accept/edit/reject pattern as every other checkpoint",
+        "Round-2 documents flow through the same automated Intake Tracker as round-1 (decision 100): each finalized request becomes a new rfi_questions[] row (round:2, source:further_submission), firing round_submitted(2) into Sufficiency Check — not Gap Analysis's all_submitted (fixes audit 2.7)"
       ]
     },
     {

@@ -8,7 +8,26 @@ Detailed contract for every agentic and non-agentic component in `docs/architect
 
 ## Shared graph state
 
-All agents read and write a single LangGraph state object, scoped per examination (one instance per LFI per examination cycle). Fields referenced below:
+All agents read and write a single LangGraph state object, scoped per examination (one instance per LFI per examination cycle). Fields referenced below.
+
+**Examination record** (Principal Engineer audit 6.1 — these are the identity/lifecycle/scheduling fields the Examiner Dashboard already reads in `agent-specifications.md`'s own Dashboard section and in ADR-0029, but that were missing from this table; added here rather than left for an engineer to invent):
+
+| Field | Written by | Read by |
+|---|---|---|
+| `lfi_id`, `license_type` | Setup (Lead/Approver, at creation) | Portfolio Home, `severity_rubric.lookup()` scoping (ADR-0020) |
+| `examination_status` (`active` / `completed`) | Setup sets `active`; Approval Coordinator sets `completed` on `preexit_status = proceeded_to_exit` | Portfolio Home's Active/Completed/All filter |
+| `voided` (boolean, default `false`) | Lead/Approver, explicit void action (ADR-0024 §4) | Portfolio Home (excludes voided from active views/queues); Audit Log (voided examinations' `audit_log[]` stays queryable regardless) |
+| `current_phase` (`pre_examination` / `examination` / `pre_exit`) | orchestrator, on phase transition | Portfolio Home |
+| `assigned_examiner`, `assigned_lead_approver` | Setup, at creation (editable per decision 111) | Examiner Dashboard RBAC scoping — "reach it only within an examination they're assigned to" (decision 106) |
+| `model_version` (string) | orchestrator, pinned at examination creation | every LLM agent (ADR-0023 §4 — in-flight examinations stay on the model version they started under, never silently switched mid-cycle) |
+| `start_date` | Setup | Portfolio Home, SLA calculations |
+| `sftp_root_override` (optional) | Setup, only if this examination's path deviates from the LFI registry's default | Ingestion Adapter — **resolves audit finding 3.4**: the LFI registry (`agent-specifications.md`'s Settings/Admin section) holds the canonical per-LFI SFTP root; this field is an explicit per-examination override, checked first, falling back to the registry value. Setup's sequence diagram writes here only when an override is actually set, not on every creation |
+| `rfi_questions[]` (ID, question text, notice ref, clause ref, `source: "rfi"\|"further_submission"`, `round: int`) | RFI Parser writes the `round: 1, source: "rfi"` entries at Setup confirm; Further-Submission Review appends `round: 2+, source: "further_submission"` entries when its checkpoint finalizes (**resolves audit finding 2.7** — a further-submission request becomes a trackable expected-document row the same way an original RFI question is, closing the "round-2 documents aren't RFI questions" gap) | Intake Tracker (expected-document list, both rounds), Compliance Analyst (round 1 only — round 2+ never re-triggers Gap Analysis, see Intake Tracker's trigger note below). Distinct from `rfi_responses[]` below, which is what the LFI actually submitted against this list |
+| `open_checkpoints[]` (`{ checkpoint_type, opened_at, due_at }`) | whichever agent raises the `interrupt()` for that checkpoint; cleared on resolution | Portfolio Home's open-checkpoint count and SLA breach flag |
+| `last_activity_at` | every agent, alongside its `audit_log[]` write | Portfolio Home |
+| `meeting_scheduled_at` | **no current writer — open item.** The Meeting tab's sufficiency-check SLA is a hard deadline (the meeting date), not a duration (`agent-specifications.md`'s HITL table, "Suggested SLA" column) and nothing today captures when the meeting is scheduled. Flagging rather than inventing a scheduling screen not otherwise scoped; needs its own decision before Phase 2 build starts on this specific field, not blocking the rest of Phase 2 |
+
+**Phase-flow state** (unchanged from the original table):
 
 | Field | Written by | Read by |
 |---|---|---|
@@ -26,7 +45,18 @@ All agents read and write a single LangGraph state object, scoped per examinatio
 | `preexit_status` (scheduled / concerns_raised / resolved / proceeded_to_exit) | Approval Coordinator | Examiner Dashboard |
 | `audit_log[]` (append-only) | every agent, on every state transition | Audit Trail Store |
 
-State is persisted to the Fraud Database (ADR-0012) after every node execution — this is what makes LangGraph's interrupt/resume (ADR-0001) durable across the 30-day RFI window and the days/weeks between examination phases. Any breaking change to this table's shape bumps `schema_version` and ships with a migration function tested against an in-flight checkpoint (ADR-0025) — a deploy must not assume no examination is mid-flight under an older schema.
+State is persisted to the Fraud Database (ADR-0012) after every node execution — this is what makes LangGraph's interrupt/resume (ADR-0001) durable across the 30-day RFI window and the days/weeks between examination phases. Any breaking change to this table's shape bumps `schema_version` and ships with a migration function tested against an in-flight checkpoint (ADR-0025) — a deploy must not assume no examination is mid-flight under an older schema. Adding the Examination Record block above is itself such a change and must ship with a migration that backfills these fields for any examination already in flight when this schema version rolls out.
+
+### `findings[]`, `compliance_verdicts[]`, `supervision_questions[]` element schemas
+
+(Principal Engineer audit 6.3 — named as arrays above but never given per-element field lists, while `tool-contracts.md` already references named types for them that were defined nowhere.)
+
+- **`FindingSummary`** (input to `severity_rubric.lookup()`): `{ finding_type: string, quantitative_flag: boolean, edm_ref?: EdmQueryRef }` — the minimal shape the rubric needs to classify a finding, before severity/deadline are assigned.
+- **`FindingRecord`** (a `findings[]` element, what `template_fill` requires): `{ id: string, finding_type: string, description: string, severity: "low"|"medium"|"high", deadline_days: int, rubric_version: string, citations: Citation[], quant_ref?: EdmQueryRef, status: "draft"|"signed_off"|"redrafted" }`.
+- **`Citation`** (the structure ADR-0004's grounding guardrail checks against): `{ clause_id: string, notice_ref: string, verbatim_text: string, sentence_index: int }` — `verbatim_text` is what the exact-match guardrail compares against the corpus; storing `sentence_index` alongside it lets a redraft re-verify against the same sentence rather than re-matching the whole clause.
+- **`EdmQueryRef`**: `{ lfi_id: string, period_range: [string, string], metric: string, value: number }` — the traceable pointer `quant_analysis.compute()` returns and every quantitative finding must cite (ADR-0021's guardrail).
+- **`ComplianceVerdict`** (a `compliance_verdicts[]` element): `{ question_id: string, verdict: "compliant"|"non_compliant"|"insufficient_grounding", citation?: Citation, asserted_by: "model"|"human" }` — `asserted_by` is what lets a human-asserted verdict (decision 95) log distinctly from a model-asserted one, per `lfi-gap-analysis-resolution-v1`'s requirement.
+- **`SupervisionQuestion`** (a `supervision_questions[]` element): `{ id: string, question_text: string, source_verdict_id: string, disposition: "pending"|"accepted"|"edited"|"rejected" }` — see the reject-path note in the Further-Submission Review / Findings sign-off sections below for what each disposition value does downstream.
 
 ---
 
@@ -37,9 +67,10 @@ State is persisted to the Fraud Database (ADR-0012) after every node execution �
 
 - **Trigger**: scheduled poll of the Ingestion Adapter (e.g., every 15 min) during the 30-day RFI window, and on-demand via Examiner Dashboard refresh.
 - **Inputs**: `rfi_store` (expected question → folder/filename convention, per decision 15), Ingestion Adapter's `list_documents()` output.
-- **Outputs**: `intake_status` per RFI question — `submitted` (present, non-empty, filename/format matches), `pending` (absent), or `suspicious` (present but fails the format check — decision 18). Deferred to v2: any content/plausibility judgment (decision 28) — this service never opens a file to judge whether it's a *plausible* answer.
+- **Outputs**: `intake_status` per RFI question — `submitted` (present, non-empty, filename/format matches) or `pending` (absent). `suspicious` (present but fails the format check — decision 18) is **transient, never terminal**: the Intake tab's Lead/Approver review resolves every `suspicious` item one of two ways — **override** to `submitted` (a false negative: scanned doc, renamed file, decision 93) or **request resubmission**, which reverts it to `pending` and logs a distinct `resubmission_requested` audit event (a confirmed true positive — the file is actually wrong; fixes Principal Engineer audit 2.11, which found no path out of `suspicious` other than asserting it's fine). A `suspicious` item left unresolved simply stays `suspicious` and blocks `all_submitted` exactly like `pending` does — it is never silently treated as good enough to proceed.
 - **Tools**: `ingestion_adapter.list_documents(lfi_id)`, `ingestion_adapter.get_metadata(doc_id)` (size, filename, last-modified).
-- **Trigger for Gap Analysis**: fires the `all_submitted` event only when every RFI question's status is `submitted` (decision 39 — batch, not incremental).
+- **Trigger for Gap Analysis**: fires the `all_submitted` event only when every **round-1** RFI question's status is `submitted` — `suspicious` and `pending` both block it (decision 39 — batch, not incremental). **Resolves audit finding 2.6**: the "Definition of done" section below previously stated a looser "100% non-`pending`" condition that would let unresolved `suspicious` items through; that was the wrong reading and is corrected there to match this one, the actual trigger Gap Analysis is built against.
+- **Trigger for Meeting Facilitator's sufficiency check**: fires a separate `round_submitted(round: N)` event when every `rfi_questions[]` entry tagged `round: N` (N > 1, i.e. further-submission rows) is `submitted`. This is deliberately **not** the same event as `all_submitted` — round 2+ intake must not re-trigger Compliance Analyst's full Gap Analysis over the whole examination, only feed the Sufficiency Check gate that already exists for exactly this purpose.
 
 ### Compliance Analyst
 **Persona**: **Compliance Analyst** — meticulous, cites chapter and verse, and says "I can't confirm this" rather than guess. System-prompt framing should make refusal-to-guess feel like professional competence, not failure, since the grounding rule (below) depends on the model being comfortable abstaining.
@@ -58,6 +89,7 @@ State is persisted to the Fraud Database (ADR-0012) after every node execution �
   2. Supersession confidence below the configured threshold (decision 30 — tune empirically; start conservative) routes that clause pair to `needs_human_review` rather than resolving it silently.
   3. In the workflow diagram (`lfi-workflow-phase1-preexam-v1.html`), both escalation reasons above are drawn as one merged "Human Review Flags" state — they route to the same Examiner Dashboard queue but must still be logged as distinct reasons in `audit_log[]`.
 - **LangGraph shape**: a ReAct-style subgraph (retrieve → verify citation → verdict) looped once per RFI question/clause pair, not a single call over the whole document set — keeps each verdict independently inspectable and re-runnable.
+  - **Sequencing note** (resolves Principal Engineer audit 3.6, and the apparent disagreement with the 2026-09-15 review's per-agent tool analysis — the two were never actually in conflict, just imprecisely worded): `notice_corpus.get_clause()` runs first and must return a high-confidence exact match before anything else happens — this is the raw text match, not yet a finalized verdict. `supersession_graph.check()` runs next, against that matched clause. **The verdict is finalized, and `log_checkpoint()` called, only after both steps complete** — so supersession is checked before the citation is finalized (the 2026-09-15 review's framing), even though it runs after the raw clause match is confirmed (`lfi-guardrail-citation-grounding-v1`'s framing). Running it before `get_clause()` would waste a lookup on a clause that might not even resolve; running it after the verdict is finalized would let a superseding clause invalidate a citation already logged as grounded. Both statements describe the same order — they were resolved by making them precise, not by changing the order.
 - **Human checkpoint**: none at this node itself; `insufficient_grounding` and `needs_human_review` items surface in the Examiner Dashboard's gap-analysis review screen for the examiner to resolve before supervision questions are finalized.
 
 ---
@@ -85,7 +117,7 @@ Two distinct responsibilities, both owned by this node (decision 25):
 `current_state.png`'s Phase 2 shows an explicit, iterative "documents/answers sufficient?" loop that earlier drafts of this spec left unmodeled, treating post-meeting extraction as one-shot with an undefined "further-submission loop resolved" condition. This is now a real, named gate (`lfi-workflow-phase2-meeting-v1.html`'s "Sufficiency Check" node):
 - **Trigger**: `further_submission_requests[]` outcomes received back through Intake Tracker's next cycle.
 - **Decision maker**: **Lead/Approver, not the LLM** (ADR-0003's augmentation principle — this is a judgment call about whether the LFI's response actually closes the gap, not an extraction task).
-- **Outputs**: `meeting_followup_status` (`sufficient` / `insufficient`). `insufficient` re-enters Phase 1's Intake Tracker via the same `all_submitted` trigger for another document-collection round; `sufficient` is the condition that actually satisfies Findings Author's trigger below — "further-submission loop resolved" now means exactly this state value, not a prose assumption.
+- **Outputs**: `meeting_followup_status` (`sufficient` / `insufficient`). `insufficient` re-enters Intake Tracker's document-collection cycle for round N+1, tracked via new `rfi_questions[]` rows (`round: N+1, source: "further_submission"`, see Shared graph state above) and gated by Intake Tracker's `round_submitted(round: N+1)` event, **not** `all_submitted` — that event is Phase 1's Gap Analysis trigger specifically and must not re-fire on further-submission rounds (resolves audit finding 2.7). `sufficient` is the condition that actually satisfies Findings Author's trigger below — "further-submission loop resolved" now means exactly this state value, not a prose assumption.
 
 ### Findings Author
 **Persona**: **Findings Author** — writes for a reader (the Assistant Governor, then LFI leadership) who wasn't in the room: every finding stands on its own, with severity and citation, no institutional memory assumed.
@@ -148,7 +180,24 @@ Not an agent — the single UI surface (ADR-0008) where every human checkpoint a
 - **Open item**: scoped as a direction, no tool contract yet (unlike the sanctions-screening gap in ADR-0028, which at least has real MCP servers to point to).
 
 ### Audit Trail Store
-Not an agent — every agent above writes an entry here (via a shared `log_checkpoint(state_before, state_after, actor)` call) at every `interrupt()` resolution and every state-machine transition in the AG/Pre-Exit Agent. Append-only (decision 36); physically part of the Fraud Database (ADR-0012). Entries are hash-chained (each includes a hash of the prior entry) so tampering is detectable (ADR-0016).
+Not an agent — every agent above writes an entry here (via a shared `log_checkpoint()` call, full contract in `tool-contracts.md`) at every `interrupt()` resolution and every state-machine transition in the AG/Pre-Exit Agent. Append-only (decision 36); physically part of the Fraud Database (ADR-0012). Entries are hash-chained (each includes a hash of the prior entry) so tampering is detectable (ADR-0016).
+
+**`AuditLogEntry` schema** (Principal Engineer audit 3.2/6.2 — previously `audit_log[]` had no field-level schema anywhere, despite six load-bearing requirements on it scattered across this document and several ADRs; a hash chain cannot be retrofitted onto an existing log, so this had to be specified before any DB implementation starts, not after):
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | primary key |
+| `examination_id` | string | which examination's chain this entry belongs to — the hash chain is per-examination, not global |
+| `timestamp` | ISO 8601 | |
+| `actor` | `{ type: "agent"\|"human", name: string, user_id?: string }` | `name` is the agent persona (e.g. `"Compliance Analyst"`) or the resolving Lead/Approver's identity |
+| `event_type` | namespaced string, e.g. `"checkpoint.resolved"`, `"intake.override"`, `"intake.resubmission_requested"`, `"setup.corrected"`, `"gap_analysis.human_asserted_verdict"`, `"gap_analysis.insufficient_grounding"`, `"gap_analysis.low_confidence_supersession"`, `"examination.voided"`, `"findings.rubric_version_changed_on_redraft"` | an open, growing namespace by design (new checkpoint/override types will keep adding values) rather than a closed enum that goes stale; every place in this document that requires "a distinct event type" or "logged distinctly" names the specific `event_type` value it needs |
+| `state_before`, `state_after` | object | scoped to the fields the triggering action actually touched, not a full state snapshot |
+| `resolution` | `"accept"\|"edit"\|"reject"` (optional) | present only on `checkpoint.*` entries |
+| `edit_diff` | object (JSON Patch), optional | present only when `resolution: "edit"` — this is what makes the human-agreement-rate metric (ADR-0016) measurable, not just "was it resolved" |
+| `reason_code` | string, optional | e.g. `"insufficient_grounding"` vs. `"low_confidence_supersession"` (decision 30) — carries the "distinct reasons, same queue" requirement from Compliance Analyst's Human Review Flags |
+| `idempotency_key` | string | deterministic hash of `(examination_id, langgraph_node_execution_id)` — computed by `log_checkpoint()` itself from the LangGraph execution context, never supplied by the caller, so a replayed/resumed node can't accidentally pass a fresh one (ADR-0018) |
+| `prev_hash` | string | hash of the immediately preceding entry in this `examination_id`'s chain; the first entry per examination uses a fixed genesis seed |
+| `entry_hash` | string | hash over this entry's other fields concatenated with `prev_hash` — the tamper-evidence mechanism ADR-0016 requires |
 
 ---
 
@@ -175,7 +224,7 @@ SLA breaches and current backlog (count of unresolved checkpoints per type) surf
 
 Today "done" is implicit — a guardrail passed and a human accepted. This section makes each agent's completion condition an explicit, checkable predicate, distilled from guardrails/state fields already defined above rather than a new mechanism:
 
-- **Intake Tracker**: every RFI question has a terminal `intake_status` (`submitted`/`pending`/`suspicious`); `all_submitted` fires only when 100% are non-`pending`.
+- **Intake Tracker**: every RFI question resolves to a terminal `intake_status` of `submitted` or `pending` (`suspicious` is transient — see Intake Tracker's own section above for its two resolution paths); `all_submitted` fires only when 100% are `submitted`.
 - **Compliance Analyst**: every RFI question has exactly one `compliance_verdicts[]` entry that is either (a) grounded with a citation machine-verifiably present in Notice Corpus, or (b) explicitly `insufficient_grounding`/`needs_human_review` — zero questions with no verdict at all, and no verdict skips the supersession check.
 - **Meeting Facilitator**: pre-meeting — every open `supervision_questions[]` item is non-empty, cites a specific gap, and is Lead/Approver-signed-off before the meeting's hard deadline. Post-meeting — every `further_submission_requests[]` item traces to a specific unresolved question, and the sufficiency gate has produced an explicit `sufficient`/`insufficient` — `meeting_followup_status` is never left unset.
 - **Findings Author**: every `findings[]` entry has `severity` equal to the last `severity_rubric.lookup()` return for its `rubric_version` (ADR-0020, code-enforced), every quantitative claim traces to a `quant_analysis.compute()` call (ADR-0021, code-enforced), and the transmittal letter/pre-exit deck drafts are non-empty and reference every signed-off finding.
