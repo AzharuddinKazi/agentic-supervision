@@ -32,6 +32,30 @@ Every tool named in `agent-specifications.md` gets a real contract here: input s
 **Timeout**: 5s.
 **Retry**: 3 attempts, same backoff as above, transient only. `not_found` is terminal — the document was listed but vanished before metadata fetch; treat as `pending`, not `suspicious` (a race with the LFI's own upload process, not evidence of a malformed submission).
 
+## `ingestion_adapter.fetch_document(doc_id)`
+**Used by**: Examiner Dashboard's Intake tab ("Open Document," `lfi-intake-tab-v1.html`), for download/open access. **Resolves Principal Engineer audit 3.3** — the highest-risk operation in ADR-0006's interface (it streams a file from an LFI-controlled SFTP server to an examiner's browser) had no contract at all before this.
+**Input**: `{ doc_id: string }`
+**Output (ok)**: `{ status: "ok", content: stream, size_bytes: int, content_type: string }` — streamed, not buffered whole into memory, given files can approach the size cap below.
+**Output (error)**: `{ status: "error", reason: "adapter_unreachable" | "not_found" | "file_too_large" | "fetch_timeout" }` — `file_too_large`: hard cap of **50 MB** per document; larger files are rejected before streaming begins, surfaced to the examiner as a distinct error rather than a silent timeout. Content/malware scanning of the fetched bytes is explicitly out of scope for this contract — it's covered by ADR-0019's pre-go-live ingestion-path security exercise, not invented here.
+**Timeout**: 20s (a full-file SFTP stream, not a metadata call — longer than `get_metadata`'s 5s deliberately).
+**Retry**: 2 attempts, backoff (2s/4s), `fetch_timeout` and `adapter_unreachable` only; never retried on `file_too_large` or `not_found`.
+
+## `rfi_parser.parse(document_ref)`
+**Used by**: Examiner Dashboard's Setup tab (`lfi-setup-tab-sequence-v1.html`), on RFI upload. **Resolves Principal Engineer audit 3.1** — this sits on the critical path of the very first screen an examiner uses and previously had no contract, unlike the Notice Corpus Manager's OCR/segment tool below, whose gap was at least flagged as an open item.
+**Input**: `{ document_ref: string }` — the uploaded RFI spreadsheet (decision 15's fixed template format).
+**Output (ok)**: `{ status: "ok", questions: [{ question_id: string, question_text: string, notice_ref: string, clause_ref: string, clause_ref_status: "resolved"|"unresolved" }] }` — a question whose `clause_ref` doesn't resolve against Notice Corpus is still returned, flagged `unresolved`, rather than failing the whole parse over one bad row; the Setup tab's existing human-confirm step (decision 85) is exactly where an examiner catches and corrects it, so an unresolved reference is data for that screen, not a parse failure.
+**Output (error)**: `{ status: "error", reason: "malformed_file" | "unsupported_format" }` — reserved for the file itself being unreadable (wrong template, corrupt spreadsheet), not for any individual question's content.
+**Timeout**: 15s (parses the sheet and resolves every row's `clause_ref` against Notice Corpus in the same call).
+**Retry**: 2 attempts, backoff (1s/2s) — transient errors only; `malformed_file`/`unsupported_format` are terminal, surfaced to the examiner to re-upload a corrected file, never retried.
+
+## `ocr_segment(document_ref)`
+**Used by**: Notice Corpus Manager (`lfi-notice-corpus-manager-sequence-v1.html`), on notice upload. **Still an open item per `agent-specifications.md`'s Notice Corpus Manager section** — scoped as a direction, no MCP servers or vendor picked yet, unlike the sanctions-screening gap in ADR-0028 which at least has real services to point to. This contract shape is provisional until that product choice is made.
+**Input**: `{ document_ref: string }` — the uploaded notice (PDF/image).
+**Output (ok)**: `{ status: "ok", clauses: [{ draft_clause_id: string, text: string, position: int }] }` — drafts only; per ADR-0004's zero-tolerance grounding rule, nothing here is citable by Compliance Analyst until a human explicitly confirms it (`lfi-notice-corpus-manager-sequence-v1.html`'s review step).
+**Output (error)**: `{ status: "error", reason: "ocr_failed" | "unsupported_format" }`.
+**Timeout**: 30s (OCR on a scanned document is slower than a text-native parse).
+**Retry**: 2 attempts, backoff (2s/4s), `ocr_failed` only (a real service outage) — not retried on `unsupported_format`.
+
 ## `notice_corpus.search(query, clause_filter)`
 **Used by**: Compliance Analyst.
 **Input**: `{ query: string, clause_filter?: string }`
