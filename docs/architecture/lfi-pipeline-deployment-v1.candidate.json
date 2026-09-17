@@ -502,7 +502,7 @@
       "dot": "violet",
       "title": "HITL checkpoints (ADR-0016)",
       "items": [
-        "5 checkpoints with SLAs — table in agent-specifications.md",
+        "HITL checkpoints with SLAs — full current table in agent-specifications.md; count not restated here since it grows as new checkpoints are added (fixes Principal Engineer audit 4.3, which found this card stale after ADR-0029)",
         "Primary trust metric: human-agreement rate. Near-100% = automation-bias risk, not a win"
       ]
     },

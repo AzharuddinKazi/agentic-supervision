@@ -3,7 +3,8 @@
   "diagram_type": "workflow",
   "meta": {
     "title": "LFI Pipeline — Phase 3 LangGraph Workflow (Post-Examination)",
-    "quality_profile": "showcase"
+    "quality_profile": "showcase",
+    "viewBox": [1080, 534]
   },
   "lanes": [
     { "id": "system", "label": "Findings Author / Approval Coordinator" },
@@ -15,24 +16,26 @@
     { "id": "signoff", "label": "Sign-off", "fromCol": 2, "toCol": 2 },
     { "id": "revise", "label": "Revision", "fromCol": 3, "toCol": 5, "variant": "security" }
   ],
-  "mainPath": ["findings_trigger", "draft_findings", "findings_signoff", "ag_showcase", "preexit_meeting"],
+  "mainPath": ["draft_findings", "findings_signoff", "pre_ag_signoff", "ag_showcase", "preexit_meeting"],
   "nodes": [
-    { "id": "findings_trigger", "lane": "system", "col": 0, "type": "external", "label": "Phase 2 Complete", "sublabel": "sufficiency confirmed", "width": 132 },
-    { "id": "draft_findings", "lane": "system", "col": 1, "type": "backend", "label": "Findings Author", "sublabel": "qual + quant tracks", "tag": "Findings & Reporting", "width": 132 },
-    { "id": "findings_signoff", "lane": "human", "col": 2, "type": "frontend", "label": "Findings Sign-off", "sublabel": "severity validated (ADR-0017)", "width": 132 },
+    { "id": "draft_findings", "lane": "system", "col": 0, "type": "backend", "label": "Findings Author", "sublabel": "qual+quant, redraft-capable", "tag": "trigger: sufficiency confirmed", "width": 132 },
+    { "id": "findings_signoff", "lane": "human", "col": 1, "type": "frontend", "label": "Findings Sign-off", "sublabel": "severity validated (ADR-0017)", "width": 132 },
+    { "id": "pre_ag_signoff", "lane": "human", "col": 2, "type": "security", "label": "Pre-AG Sign-off", "sublabel": "reviews drafted letter/deck", "tag": "ADR-0003 checkpoint (c)", "width": 132 },
     { "id": "ag_showcase", "lane": "external", "col": 3, "type": "external", "label": "AG Showcase", "sublabel": "outside pipeline", "width": 132 },
-    { "id": "ag_feedback_review", "lane": "human", "col": 4, "type": "frontend", "label": "AG Feedback Review", "sublabel": "NEW — human-gated", "tag": "fixes ADR-0017 gap", "width": 132 },
+    { "id": "ag_feedback_review", "lane": "human", "col": 4, "type": "frontend", "label": "AG Feedback Review", "sublabel": "raw + summary, side-by-side", "tag": "fixes ADR-0017 gap", "width": 132 },
     { "id": "preexit_meeting", "lane": "external", "col": 5, "type": "external", "label": "Pre-Exit Meeting", "sublabel": "concerns? — see card", "width": 132 }
   ],
   "edges": [
-    { "id": "trigger-draft", "from": "findings_trigger", "to": "draft_findings", "variant": "default" },
     { "id": "draft-signoff", "from": "draft_findings", "to": "findings_signoff", "label": "severity = rubric.lookup()", "variant": "emphasis" },
-    { "id": "signoff-showcase", "from": "findings_signoff", "to": "ag_showcase", "label": "Lead/Approver signs off", "variant": "default" },
+    { "id": "signoff-preag", "from": "findings_signoff", "to": "pre_ag_signoff", "label": "Lead/Approver signs off", "variant": "default" },
+    { "id": "preag-showcase", "from": "pre_ag_signoff", "to": "ag_showcase", "label": "ag_status → awaiting_ag", "variant": "emphasis" },
     { "id": "showcase-approved", "from": "ag_showcase", "to": "preexit_meeting", "label": "approved", "variant": "emphasis" },
-    { "id": "showcase-changes", "from": "ag_showcase", "to": "ag_feedback_review", "label": "changes requested", "variant": "security", "role": "branch" }
+    { "id": "showcase-changes", "from": "ag_showcase", "to": "ag_feedback_review", "label": "changes requested", "variant": "security", "role": "branch" },
+    { "id": "feedback-redraft", "from": "ag_feedback_review", "to": "draft_findings", "label": "confirmed: redraft", "variant": "security" },
+    { "id": "preexit-redraft", "from": "preexit_meeting", "to": "draft_findings", "label": "concerns raised: redraft", "variant": "security" }
   ],
   "cards": [
-    { "dot": "rose", "title": "Fixes from Critical Finding #1 (ADR-0017)", "items": ["AG feedback surfaces here first, with its own interrupt() — never passed straight to Findings Author as a redraft trigger; redraft loop not drawn", "Persisted severity must equal rubric.lookup()'s return value, enforced in code", "Pre-exit concerns → exit deck, loops back; no concerns → exit meeting (terminal)"] },
-    { "dot": "slate", "title": "How to read this diagram", "items": ["Branch points (e.g. AG showcase's approved/changes-requested split) are edge-labeled, not drawn as decision diamonds — archify's workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape", "Closest standard: a UML activity diagram without gateway notation. Human checkpoints use a dedicated lane, not a person-icon convention", "external lane covers two things sharing one color — genuinely external meetings (AG Showcase, Pre-Exit) and internal state-machine trigger events (findings_trigger); lane placement disambiguates them"] }
+    { "dot": "rose", "title": "Fixes from Critical Finding #1 (ADR-0017) and Principal Engineer audit 2.1/2.2/2.3", "items": ["AG feedback surfaces at its own interrupt() (ag_feedback_review), never passed straight to Findings Author — only Lead/Approver confirmation routes back to draft_findings for a real redraft, drawn as an actual loop-back edge, not left to prose", "New checkpoint: Pre-AG Sign-off (ADR-0003's third named checkpoint, \"before anything is submitted for Assistant Governor approval\") — distinct from Findings Sign-off, which approves findings[] data before the letter is even drafted; this one reviews the drafted transmittal letter/pre-exit deck itself, right before ag_status moves to awaiting_ag", "Both redraft loops (AG feedback, pre-exit concerns) route back through the same draft_findings → findings_signoff → pre_ag_signoff path — a redraft re-evaluates severity against the current rubric version (ADR-0020) and must pass both sign-offs again before reaching the AG a second time", "Persisted severity must equal rubric.lookup()'s return value, enforced in code"] },
+    { "dot": "slate", "title": "How to read this diagram", "items": ["Branch points (e.g. AG showcase's approved/changes-requested split) are edge-labeled, not drawn as decision diamonds — archify's workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape", "Closest standard: a UML activity diagram without gateway notation. Human checkpoints use a dedicated lane, not a person-icon convention", "Pre-Exit Meeting's \"no concerns\" path (not drawn as a separate edge) is the terminal state — preexit_status: proceeded_to_exit — matching the Examiner Dashboard's auto-close condition (lfi-examiner-dashboard-userflow-v1.html)"] }
   ]
 }
