@@ -3,7 +3,8 @@
   "diagram_type": "workflow",
   "meta": {
     "title": "LFI Pipeline — Phase 2 LangGraph Workflow (Examination Meeting)",
-    "quality_profile": "showcase"
+    "quality_profile": "showcase",
+    "viewBox": [1080, 534]
   },
   "lanes": [
     { "id": "system", "label": "Meeting Facilitator" },
@@ -31,12 +32,12 @@
     { "id": "meeting-minutes", "from": "meeting", "to": "minutes_submitted", "variant": "default" },
     { "id": "minutes-extract", "from": "minutes_submitted", "to": "extract", "variant": "default" },
     { "id": "extract-requests", "from": "extract", "to": "requests", "variant": "default" },
-    { "id": "requests-sufficiency", "from": "requests", "to": "sufficiency", "label": "further submissions received", "variant": "default" },
+    { "id": "requests-sufficiency", "from": "requests", "to": "sufficiency", "label": "reviewed, relayed, round-2 received", "variant": "default" },
     { "id": "sufficiency-insufficient", "from": "sufficiency", "to": "insufficient", "label": "still insufficient", "variant": "security", "role": "branch" },
     { "id": "sufficiency-ready", "from": "sufficiency", "to": "findings_ready", "label": "sufficient", "variant": "emphasis" }
   ],
   "cards": [
-    { "dot": "amber", "title": "New: sufficiency-check gate (fixes Critical Finding #3)", "items": ["current_state.png's Phase 2 shows an iterative sufficiency loop earlier drafts left unmodeled — this gate makes it a real, human-judged state, not an assumed one-shot extraction", "\"Insufficient\" re-enters Phase 1's Intake Tracker via the same all_submitted trigger (no literal loop-back edge drawn, to avoid clutter)"] },
+    { "dot": "amber", "title": "New: sufficiency-check gate (fixes Critical Finding #3)", "items": ["current_state.png's Phase 2 shows an iterative sufficiency loop earlier drafts left unmodeled — this gate makes it a real, human-judged state, not an assumed one-shot extraction", "\"Insufficient\" re-enters Phase 1's Intake Tracker via the same all_submitted trigger (no literal loop-back edge drawn, to avoid clutter)", "Updated (decision 99): \"requests → sufficiency\" isn't direct — Lead/Approver review, LFI relay, and round-2 intake happen first; full sequence in lfi-further-submission-review-v1.html"] },
     { "dot": "cyan", "title": "Guardrail", "items": ["Sufficiency Check is explicitly human-judged (ADR-0003 augmentation principle) — no LLM auto-resolution of \"resolved\", since that was previously undefined"] },
     { "dot": "slate", "title": "How to read this diagram", "items": ["Branch points (e.g. Sufficiency Check's sufficient/insufficient split) are edge-labeled, not drawn as decision diamonds — archify's workflow grammar has no decision-node/fork-join primitive, so guard conditions live on the edge label, not a gateway shape", "Closest standard: a UML activity diagram without gateway notation. Human checkpoints use a dedicated lane, not a person-icon convention"] }
   ]

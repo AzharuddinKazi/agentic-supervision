@@ -70,8 +70,9 @@
       "lane": "system",
       "col": 4,
       "type": "backend",
-      "label": "Findings Redraft",
-      "sublabel": "triggered on confirm only",
+      "label": "Redraft Triggered",
+      "sublabel": "Findings Author action",
+      "tag": "not a stored ag_status value",
       "width": 136
     },
     {
@@ -134,7 +135,7 @@
       "title": "Diagram scope",
       "items": [
         "The pre-exit concerns loop reuses this exact redraft/sign-off flow rather than a separate \"Exit Deck\" screen (decision 105)",
-        "Full states: drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → redraft → awaiting_ag → approved"
+        "ag_status has exactly 5 values (agent-specifications.md): drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → approved. \"Redraft\" is Findings Author's action on confirm, not a 6th stored status — ag_status returns to awaiting_ag once the redraft is resubmitted"
       ]
     }
   ]

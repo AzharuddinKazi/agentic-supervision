@@ -5184,7 +5184,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
         <!-- Edge paths -->
         <path data-edge-from="raw_feedback" data-edge-to="summarize" data-edge-key="0" data-edge-id="raw-summarize" data-composition-points="304,246;356,246;356,338" d="M 304 246 L 356 246 L 356 338" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="redraft" data-edge-to="awaiting_ag" data-edge-key="1" data-edge-id="redraft-awaiting" data-composition-points="601.6,346;601.6,120;653.6,120" d="M 601.6 346 L 601.6 120 L 653.6 120" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="redraft" data-edge-to="awaiting_ag" data-edge-key="1" data-edge-id="redraft-awaiting" data-composition-points="601.6,338;601.6,120;653.6,120" d="M 601.6 338 L 601.6 120 L 653.6 120" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <path data-edge-from="feedback_review" data-edge-to="redraft" data-edge-label="confirmed" data-edge-key="2" data-edge-id="review-redraft" data-composition-points="476,280;476,372;533.6,372" d="M 476 280 L 476 372 L 533.6 372" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <path data-edge-from="ag_showcase" data-edge-to="raw_feedback" data-edge-label="Changes Requested" data-edge-key="3" data-edge-id="showcase-raw" data-composition-points="116,146;116,168;236,168;236,212" d="M 116 146 L 116 168 L 236 168 L 236 212" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <path data-edge-from="summarize" data-edge-to="feedback_review" data-edge-label="not auto-applied" data-edge-key="4" data-edge-id="summarize-review" data-composition-points="356,338;356,162;476,162;476,212" d="M 356 338 L 356 162 L 476 162 L 476 212" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
@@ -5258,15 +5258,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="fine" x="356" y="394" class="t-messagebus" font-size="7" text-anchor="middle">Approval Coordinator</text>
         </g>
 
-        <g id="node-redraft" data-node-id="redraft" data-node-label="Findings Redraft" tabindex="0" role="button" aria-label="Focus Findings Redraft, triggered on confirm only, Approval Coordinator / Findings Author › Redraft loop" aria-pressed="false" data-node-kind="backend" data-node-sublabel="triggered on confirm only" data-node-context="Approval Coordinator / Findings Author › Redraft loop">
-          <title>Findings Redraft · triggered on confirm only · Approval Coordinator / Findings Author › Redraft loop</title>
-          <rect x="533.6" y="346" width="136" height="52" rx="6" class="c-mask"/>
-          <rect x="533.6" y="346" width="136" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(539.6 352) scale(0.6875)">
+        <g id="node-redraft" data-node-id="redraft" data-node-label="Redraft Triggered" tabindex="0" role="button" aria-label="Focus Redraft Triggered, Findings Author action, Approval Coordinator / Findings Author › Redraft loop" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Findings Author action" data-node-tag="not a stored ag_status value" data-node-context="Approval Coordinator / Findings Author › Redraft loop">
+          <title>Redraft Triggered · Findings Author action · Approval Coordinator / Findings Author › Redraft loop · not a stored ag_status value</title>
+          <rect x="533.6" y="338" width="136" height="68" rx="6" class="c-mask"/>
+          <rect x="533.6" y="338" width="136" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(539.6 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="601.6" y="367" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Findings Redraft</text>
-          <text data-detail="context" x="601.6" y="384" class="t-muted" font-size="8" text-anchor="middle">triggered on confirm only</text>
+          <text data-node-label="" data-detail-anchor="" x="601.6" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Redraft Triggered</text>
+          <text data-detail="context" x="601.6" y="376" class="t-muted" font-size="8" text-anchor="middle">Findings Author action</text>
+        <text data-detail="fine" x="601.6" y="394" class="t-backend" font-size="7" text-anchor="middle">not a stored ag_status value</text>
         </g>
 
         <!-- Edge labels -->
@@ -5513,7 +5514,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <ul>
           <li>&bull; The pre-exit concerns loop reuses this exact redraft/sign-off flow rather than a separate &quot;Exit Deck&quot; screen (decision 105)</li>
-          <li>&bull; Full states: drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → redraft → awaiting_ag → approved</li>
+          <li>&bull; ag_status has exactly 5 values (agent-specifications.md): drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → approved. &quot;Redraft&quot; is Findings Author&#39;s action on confirm, not a 6th stored status — ag_status returns to awaiting_ag once the redraft is resubmitted</li>
         </ul>
       </div>
     </div>
