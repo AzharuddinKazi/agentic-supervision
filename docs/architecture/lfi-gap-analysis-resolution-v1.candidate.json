@@ -1,0 +1,110 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Gap Analysis Resolution — Two Options, Not Three",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 534]
+  },
+  "lanes": [
+    { "id": "system", "label": "Compliance Analyst" },
+    { "id": "gated", "label": "Lead/Approver — accept" },
+    { "id": "outcome", "label": "Lead/Approver — assert" }
+  ],
+  "phases": [
+    { "id": "flagged", "label": "Flagged", "fromCol": 0, "toCol": 0 },
+    { "id": "resolve", "label": "Resolution (2 options)", "fromCol": 1, "toCol": 2, "variant": "security" },
+    { "id": "complete", "label": "Auto-inferred complete", "fromCol": 3, "toCol": 4, "variant": "emphasis" }
+  ],
+  "mainPath": [
+    "flagged_item",
+    "resolution_choice",
+    "human_asserted",
+    "item_resolved",
+    "complete"
+  ],
+  "nodes": [
+    {
+      "id": "flagged_item",
+      "lane": "system",
+      "col": 0,
+      "type": "backend",
+      "label": "Flagged Item",
+      "sublabel": "ungrounded / low-conf.",
+      "width": 136
+    },
+    {
+      "id": "resolution_choice",
+      "lane": "gated",
+      "col": 1,
+      "type": "frontend",
+      "label": "Resolution Choice",
+      "sublabel": "2 options only",
+      "tag": "3rd dropped, decision 95",
+      "width": 136
+    },
+    {
+      "id": "accept_insufficient",
+      "lane": "gated",
+      "col": 2,
+      "type": "security",
+      "label": "Accept: Insufficient",
+      "sublabel": "→ supervision question",
+      "width": 136
+    },
+    {
+      "id": "human_asserted",
+      "lane": "outcome",
+      "col": 2,
+      "type": "security",
+      "label": "Human-Asserted",
+      "sublabel": "human-supplied citation",
+      "width": 136
+    },
+    {
+      "id": "item_resolved",
+      "lane": "system",
+      "col": 3,
+      "type": "backend",
+      "label": "Item Resolved",
+      "sublabel": "either path",
+      "width": 136
+    },
+    {
+      "id": "complete",
+      "lane": "system",
+      "col": 4,
+      "type": "backend",
+      "label": "Analysis Complete",
+      "sublabel": "no button, decision 96",
+      "tag": "inferred from state",
+      "width": 136
+    }
+  ],
+  "edges": [
+    { "id": "flagged-choice", "from": "flagged_item", "to": "resolution_choice", "variant": "default" },
+    { "id": "choice-accept", "from": "resolution_choice", "to": "accept_insufficient", "label": "accept", "variant": "default" },
+    { "id": "choice-assert", "from": "resolution_choice", "to": "human_asserted", "label": "assert verdict", "variant": "emphasis", "role": "branch" },
+    { "id": "accept-resolved", "from": "accept_insufficient", "to": "item_resolved", "variant": "default" },
+    { "id": "assert-resolved", "from": "human_asserted", "to": "item_resolved", "variant": "emphasis" },
+    { "id": "resolved-complete", "from": "item_resolved", "to": "complete", "variant": "default" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Two options, not three (decision 95)",
+      "items": [
+        "A third option — targeted re-run of Compliance Analyst on a single flagged item — was considered and dropped for v1: nothing in the LangGraph shape supports partial re-invocation from the UI, so it's scoped explicitly later rather than implied here",
+        "\"Accept as insufficient\" becomes a supervision question; \"human-asserted verdict\" is logged as human-asserted, distinct from a model-asserted verdict, so the audit trail never conflates the two"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Auto-inferred completion (decision 96)",
+      "items": [
+        "\"Gap analysis complete\" is true once every flagged item has one of these two resolutions and every RFI question has a compliance_verdicts[] entry — no separate sign-off button attests to anything the resolutions don't already determine",
+        "The citation-grounding call sequence that produces the initial flag is drawn in lfi-guardrail-citation-grounding-v1.html, not repeated here"
+      ]
+    }
+  ]
+}

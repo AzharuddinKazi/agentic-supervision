@@ -1,0 +1,98 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Intake Tab — Auto Status + Manual Override",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 534]
+  },
+  "lanes": [
+    { "id": "auto", "label": "Ingestion Adapter / Intake Tracker" },
+    { "id": "gated", "label": "Lead/Approver (override)" }
+  ],
+  "phases": [
+    { "id": "ingest", "label": "Ingest + check", "fromCol": 0, "toCol": 1 },
+    { "id": "override", "label": "Manual override", "fromCol": 2, "toCol": 2, "variant": "security" },
+    { "id": "access", "label": "Access", "fromCol": 3, "toCol": 4 }
+  ],
+  "mainPath": [
+    "doc_ingested",
+    "status_check",
+    "marked_submitted",
+    "doc_access"
+  ],
+  "nodes": [
+    {
+      "id": "doc_ingested",
+      "lane": "auto",
+      "col": 0,
+      "type": "cloud",
+      "label": "Document Ingested",
+      "sublabel": "via Ingestion Adapter",
+      "width": 136
+    },
+    {
+      "id": "status_check",
+      "lane": "auto",
+      "col": 1,
+      "type": "cloud",
+      "label": "Presence Check",
+      "sublabel": "format + presence",
+      "width": 136
+    },
+    {
+      "id": "override",
+      "lane": "gated",
+      "col": 2,
+      "type": "security",
+      "label": "Manual Override",
+      "sublabel": "required free-text reason",
+      "tag": "decision 93, distinct event",
+      "width": 136
+    },
+    {
+      "id": "marked_submitted",
+      "lane": "auto",
+      "col": 3,
+      "type": "backend",
+      "label": "Marked Submitted",
+      "sublabel": "auto or overridden",
+      "width": 136
+    },
+    {
+      "id": "doc_access",
+      "lane": "auto",
+      "col": 4,
+      "type": "external",
+      "label": "Open Document",
+      "sublabel": "download/open only",
+      "tag": "no custom viewer, dec. 94",
+      "width": 136
+    }
+  ],
+  "edges": [
+    { "id": "ingest-check", "from": "doc_ingested", "to": "status_check", "variant": "default" },
+    { "id": "check-override", "from": "status_check", "to": "override", "label": "false negative", "variant": "security", "role": "branch" },
+    { "id": "check-submitted", "from": "status_check", "to": "marked_submitted", "label": "ok", "variant": "emphasis" },
+    { "id": "override-submitted", "from": "override", "to": "marked_submitted", "label": "reason logged", "variant": "emphasis" },
+    { "id": "submitted-access", "from": "marked_submitted", "to": "doc_access", "variant": "default" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Manual override (decision 93)",
+      "items": [
+        "Filename/format false negatives (scanned docs, renamed files) are common enough to cause real friction — the override lets Lead/Approver mark a suspicious/pending item submitted by hand, with a required reason",
+        "Logged as a distinct event type from the automated status, not blended into it — the audit trail always shows whether a status came from the machine check or a human override"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Document access is download/open via the Ingestion Adapter (decision 94) — a custom PDF/image/OCR viewer is real scope ADR-0002 doesn't justify yet",
+        "The Ingestion Adapter's own poll/fetch/SFTP cycle is drawn in lfi-pipeline-v1.html, not repeated here"
+      ]
+    }
+  ]
+}

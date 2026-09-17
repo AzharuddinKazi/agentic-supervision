@@ -1,0 +1,97 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Severity Rubric Editor — Global, Versioned Settings Screen",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 534]
+  },
+  "lanes": [
+    { "id": "gated", "label": "Lead/Approver" },
+    { "id": "system", "label": "Shared Platform Service" }
+  ],
+  "phases": [
+    { "id": "access", "label": "Settings/Admin", "fromCol": 0, "toCol": 1 },
+    { "id": "edit", "label": "Edit + save", "fromCol": 2, "toCol": 2, "variant": "emphasis" },
+    { "id": "use", "label": "Versioned + used", "fromCol": 3, "toCol": 4 }
+  ],
+  "mainPath": [
+    "settings_admin",
+    "rubric_editor",
+    "edit_save",
+    "new_version",
+    "lookup"
+  ],
+  "nodes": [
+    {
+      "id": "settings_admin",
+      "lane": "gated",
+      "col": 0,
+      "type": "external",
+      "label": "Settings/Admin",
+      "sublabel": "outside any exam workspace",
+      "width": 136
+    },
+    {
+      "id": "rubric_editor",
+      "lane": "gated",
+      "col": 1,
+      "type": "frontend",
+      "label": "Rubric Editor",
+      "sublabel": "shows current version: vN",
+      "tag": "edit form, not history browser",
+      "width": 136
+    },
+    {
+      "id": "edit_save",
+      "lane": "gated",
+      "col": 2,
+      "type": "security",
+      "label": "Edit + Save",
+      "sublabel": "save creates new version",
+      "width": 136
+    },
+    {
+      "id": "new_version",
+      "lane": "system",
+      "col": 3,
+      "type": "database",
+      "label": "Versioned Rubric",
+      "sublabel": "ADR-0020 traceability",
+      "width": 136
+    },
+    {
+      "id": "lookup",
+      "lane": "system",
+      "col": 4,
+      "type": "cloud",
+      "label": "Rubric Lookup",
+      "sublabel": "severity_rubric.lookup()",
+      "width": 136
+    }
+  ],
+  "edges": [
+    { "id": "settings-editor", "from": "settings_admin", "to": "rubric_editor", "variant": "default" },
+    { "id": "editor-save", "from": "rubric_editor", "to": "edit_save", "variant": "default" },
+    { "id": "save-version", "from": "edit_save", "to": "new_version", "label": "current version: vN+1", "variant": "emphasis" },
+    { "id": "version-lookup", "from": "new_version", "to": "lookup", "variant": "default" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "One rubric per license type, not per-examination (decision 84)",
+      "items": [
+        "Edited from a standalone Settings/Admin area outside any single examination's workspace, consistent with ADR-0020 treating it as a shared, versioned platform service — Lead/Approver access, no new admin role introduced for this alone",
+        "The editor shows only the current version and a save-creates-new-version action — full version history stays queryable via the Audit Log tab if ever needed, without building a dedicated version browser (decision 110)"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "The data itself must stay versioned (ADR-0020's traceability guardrail is a hard requirement) even though the editing UI is deliberately simple",
+        "severity_rubric.lookup()'s call contract and its use inside Compliance Analyst/Findings Author's guardrails are in agent-specifications.md, not repeated here"
+      ]
+    }
+  ]
+}

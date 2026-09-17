@@ -1,0 +1,85 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Audit Log — Same Detail, Different Scope (decision 106)",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 534]
+  },
+  "lanes": [
+    { "id": "system", "label": "Any Checkpoint" },
+    { "id": "examiner", "label": "Examiner / Lead-Approver" },
+    { "id": "auditor", "label": "Auditor" }
+  ],
+  "phases": [
+    { "id": "event", "label": "Event", "fromCol": 0, "toCol": 0 },
+    { "id": "write", "label": "Append-only write", "fromCol": 1, "toCol": 1, "variant": "emphasis" },
+    { "id": "reach", "label": "Different reach, same detail", "fromCol": 2, "toCol": 2 }
+  ],
+  "mainPath": [
+    "event",
+    "audit_write",
+    "within_exam"
+  ],
+  "nodes": [
+    {
+      "id": "event",
+      "lane": "system",
+      "col": 0,
+      "type": "backend",
+      "label": "Checkpoint Event",
+      "sublabel": "sign-off, override, correction",
+      "width": 136
+    },
+    {
+      "id": "audit_write",
+      "lane": "system",
+      "col": 1,
+      "type": "database",
+      "label": "Audit Trail Store",
+      "sublabel": "append-only, per checkpoint",
+      "width": 136
+    },
+    {
+      "id": "within_exam",
+      "lane": "examiner",
+      "col": 2,
+      "type": "frontend",
+      "label": "Within-Exam Log",
+      "sublabel": "reached inside assigned exam",
+      "width": 136
+    },
+    {
+      "id": "portfolio_view",
+      "lane": "auditor",
+      "col": 2,
+      "type": "frontend",
+      "label": "Portfolio Log",
+      "sublabel": "cross-examination landing page",
+      "width": 136
+    }
+  ],
+  "edges": [
+    { "id": "event-write", "from": "event", "to": "audit_write", "variant": "default" },
+    { "id": "write-within", "from": "audit_write", "to": "within_exam", "label": "same full detail", "variant": "default" },
+    { "id": "write-portfolio", "from": "audit_write", "to": "portfolio_view", "label": "same full detail", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Scope is the only difference (decision 106)",
+      "items": [
+        "The Audit Log tab shows identical full detail to all three roles — Examiner, Lead/Approver, and Auditor never see a redacted or summarized version of the same log",
+        "The real distinction is reach, not content: Examiner/Lead-Approver only reach it from within an examination they're assigned to, while Auditor gets a portfolio-wide, cross-examination view as their effective landing page — they hold no drafting/sign-off role that needs the per-examination workspace otherwise"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Covers only the access-scope split, not the log's schema or retention policy — see ADR-0024 for data retention/lifecycle and audit access",
+        "The Auditor's landing page is also drawn in lfi-examiner-dashboard-userflow-v1.html's navigation flow, not repeated here"
+      ]
+    }
+  ]
+}
