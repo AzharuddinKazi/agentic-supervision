@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LFI Examination Pipeline — Diagrams</title>
+<style>
+  :root {
+    --bg: #f7f7f8;
+    --fg: #1a1a1e;
+    --muted: #666a73;
+    --card-bg: #ffffff;
+    --border: #e4e4e8;
+    --accent: #4f46e5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121214;
+      --fg: #ececef;
+      --muted: #9a9ca3;
+      --card-bg: #1c1c1f;
+      --border: #2c2c31;
+      --accent: #8b85f5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding: 16px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin: 24px 0 4px; }
+  .subtitle { color: var(--muted); margin: 0 0 32px; font-size: 0.95rem; }
+  h2 {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 36px 0 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  a.card {
+    display: block;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--fg);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  a.card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .card .name { font-weight: 600; font-size: 0.95rem; }
+  .card .desc { color: var(--muted); font-size: 0.82rem; margin-top: 4px; line-height: 1.35; }
+  footer { color: var(--muted); font-size: 0.8rem; margin: 48px 0 24px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LFI Examination Pipeline — Diagrams</h1>
+  <p class="subtitle">Interactive architecture, workflow, and sequence diagrams for the CBUAE LFI examination pipeline and Examiner Dashboard.</p>
+
+  <h2>Core Architecture</h2>
+  <div class="grid">
+    <a class="card" href="architecture/lfi-pipeline-context-v1.html">
+      <div class="name">Pipeline — Context View</div>
+      <div class="desc">C4-style zoomed-out view of the pipeline and its external actors/systems.</div>
+    </a>
+    <a class="card" href="architecture/lfi-pipeline-v1.html">
+      <div class="name">Pipeline — Logical Architecture</div>
+      <div class="desc">The main v1 architecture diagram: all agents, tools, and data stores across the three phases.</div>
+    </a>
+    <a class="card" href="architecture/lfi-pipeline-deployment-v1.html">
+      <div class="name">Pipeline — Deployment Architecture</div>
+      <div class="desc">On-prem deployment topology, security boundaries, and observability stack.</div>
+    </a>
+  </div>
+
+  <h2>LangGraph Workflows</h2>
+  <div class="grid">
+    <a class="card" href="architecture/lfi-workflow-phase1-preexam-v1.html">
+      <div class="name">Phase 1 — Pre-Examination</div>
+      <div class="desc">Gap analysis, citation grounding, and supervision-question drafting.</div>
+    </a>
+    <a class="card" href="architecture/lfi-workflow-phase2-meeting-v1.html">
+      <div class="name">Phase 2 — Examination Meeting</div>
+      <div class="desc">Meeting minutes extraction, further-submission requests, and the sufficiency gate.</div>
+    </a>
+    <a class="card" href="architecture/lfi-workflow-phase3-postexam-v1.html">
+      <div class="name">Phase 3 — Post-Examination</div>
+      <div class="desc">Findings, AG showcase, and pre-exit revision loops.</div>
+    </a>
+    <a class="card" href="architecture/lfi-guardrail-citation-grounding-v1.html">
+      <div class="name">Citation-Grounding Guardrail</div>
+      <div class="desc">UML sequence diagram for the grounded-vs-ungrounded call sequence (ADR-0004/0018).</div>
+    </a>
+  </div>
+
+  <h2>Examiner Dashboard</h2>
+  <div class="grid">
+    <a class="card" href="architecture/lfi-examiner-dashboard-userflow-v1.html">
+      <div class="name">Navigation &amp; RBAC Userflow</div>
+      <div class="desc">Portfolio home → tabbed workspace → gated actions → auto-close.</div>
+    </a>
+    <a class="card" href="architecture/lfi-setup-tab-sequence-v1.html">
+      <div class="name">Setup Tab</div>
+      <div class="desc">Examination creation, RFI upload/parse/confirm, and post-creation edits.</div>
+    </a>
+    <a class="card" href="architecture/lfi-intake-tab-v1.html">
+      <div class="name">Intake Tab</div>
+      <div class="desc">Auto status check plus the Lead/Approver manual-override path.</div>
+    </a>
+    <a class="card" href="architecture/lfi-gap-analysis-resolution-v1.html">
+      <div class="name">Gap Analysis Resolution</div>
+      <div class="desc">The two allowed resolutions for a flagged item — no third option.</div>
+    </a>
+    <a class="card" href="architecture/lfi-supervision-signoff-v1.html">
+      <div class="name">Supervision-Question Sign-off</div>
+      <div class="desc">Per-question pre-meeting checkpoint.</div>
+    </a>
+    <a class="card" href="architecture/lfi-further-submission-review-v1.html">
+      <div class="name">Further-Submission Review</div>
+      <div class="desc">The new post-meeting HITL checkpoint before requests are relayed to the LFI.</div>
+    </a>
+    <a class="card" href="architecture/lfi-findings-signoff-v1.html">
+      <div class="name">Findings Sign-off</div>
+      <div class="desc">Qualitative and quantitative tracks, signed off separately, never reconciled.</div>
+    </a>
+    <a class="card" href="architecture/lfi-ag-feedback-review-v1.html">
+      <div class="name">AG Feedback Review</div>
+      <div class="desc">The redraft guardrail — an AI summary can never trigger a redraft without human confirmation.</div>
+    </a>
+    <a class="card" href="architecture/lfi-audit-log-scope-v1.html">
+      <div class="name">Audit Log — Scope by Role</div>
+      <div class="desc">Same full detail for every role; only the reach (per-exam vs. portfolio-wide) differs.</div>
+    </a>
+    <a class="card" href="architecture/lfi-notice-corpus-manager-sequence-v1.html">
+      <div class="name">Notice Corpus Manager</div>
+      <div class="desc">Upload → OCR → segment → human-confirm call sequence.</div>
+    </a>
+    <a class="card" href="architecture/lfi-rubric-editor-v1.html">
+      <div class="name">Severity Rubric Editor</div>
+      <div class="desc">Global, versioned settings screen shared across examinations.</div>
+    </a>
+  </div>
+
+  <footer>LFI Examination Pipeline — architecture documentation, generated with archify.</footer>
+</div>
+</body>
+</html>
