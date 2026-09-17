@@ -82,7 +82,7 @@
       "title": "One rubric per license type, not per-examination (decision 84)",
       "items": [
         "Edited from a standalone Settings/Admin area outside any single examination's workspace, consistent with ADR-0020 treating it as a shared, versioned platform service — Lead/Approver access, no new admin role introduced for this alone",
-        "The editor shows only the current version and a save-creates-new-version action — full version history stays queryable via the Audit Log tab if ever needed, without building a dedicated version browser (decision 110)"
+        "The editor shows the current version plus an inline prior-versions list (audit_log[] entries filtered to event_type: rubric.version_changed) — not the per-examination Audit Log tab, which Lead/Approver can't reach from outside an examination anyway (fixes Principal Engineer audit 4.7). No separate version-browser screen is built (decision 110)"
       ]
     },
     {

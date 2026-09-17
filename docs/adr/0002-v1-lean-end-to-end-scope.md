@@ -6,7 +6,7 @@ This is worth recording because it's the opposite of the "narrow but deep" defau
 
 Concretely, "bare minimum" per phase means:
 - **Pre-examination**: intake tracking (presence/format only, no content validation) + notice/clause compliance gap analysis (no EDM cross-checking).
-- **Examination meeting**: agent drafts the pre-meeting clarification-question list from gap-analysis + EDM output; accepts human-typed meeting minutes post-meeting to extract further-submission action items. No audio/video transcription.
+- **Examination meeting**: agent drafts the pre-meeting supervision-question list from gap-analysis + EDM output; accepts human-typed meeting minutes post-meeting to extract further-submission action items. No audio/video transcription.
 - **Post-examination**: findings/severity human sign-off, then transmittal letter drafted from a fixed template; pre-exit deck is a derived artifact off the same finding data, not independently authored. **Updated by ADR-0010**: the AG-approval and pre-exit revision loops are modeled as real pipeline state in v1, not a flat status field or a deferred edge case — see ADR-0010.
 
 License-type scope is separately narrowed to banks only for v1 (SVFs and others deferred to v2+), independent of this phase-scope decision.

@@ -12,7 +12,7 @@ ADR-0008 committed to one unified app; this ADR settles the structure that app a
 
 **New HITL checkpoint: Further-submission review.** Auditing the meeting flow surfaced a genuine gap — `further_submission_requests[]` (extracted from meeting minutes) had no sign-off checkpoint at all, distinct from the pre-meeting supervision-question sign-off and the later sufficiency check. Added to the HITL table in `agent-specifications.md`, same per-item accept/edit/reject pattern as every other checkpoint.
 
-**Two-role RBAC (decision 35) was reconsidered and reaffirmed during this round**, not changed — worth recording here because the entire checkpoint/guardrail architecture above assumes it holds.
+**Two-role checkpoint RBAC (decision 35) was reconsidered and reaffirmed during this round**, not changed — worth recording here because the entire checkpoint/guardrail architecture above assumes it holds. This is the checkpoint-resolution axis specifically (Examiner drafts, Lead/Approver signs off); it doesn't count Auditor/Compliance Reviewer (ADR-0024), a read-only third role with no checkpoint role — see ADR-0007's scope note (resolves Principal Engineer audit 4.4).
 
 **What stays explicitly out of v1, with a reason**: an in-app metrics/observability dashboard (ADR-0016 already routes this through Langfuse/BI-tooling to avoid a second reporting surface — flagged as a future-scope candidate, not dropped); in-browser rendering of the transmittal letter/pre-exit deck (download-only for now, same reason — flagged as future scope, not dropped); email/push notifications (in-app surfacing only); and local user/role management (assumed CBUAE SSO, specific IdP an open item like `secrets_manager` and the deployment platform).
 

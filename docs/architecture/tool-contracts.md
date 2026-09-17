@@ -65,9 +65,9 @@ Every tool named in `agent-specifications.md` gets a real contract here: input s
 **Timeout**: 5s.
 **Retry**: 3 attempts, exponential backoff (1s/2s/4s). Exhausted retries route to `needs_human_review` with reason `graph_unavailable` — same "don't silently guess" principle, applied to supersession instead of raw citation lookup.
 
-## `severity_rubric.lookup(finding, rubric_version?)`
-**Used by**: Findings Author. **Shared, versioned platform service** (ADR-0020) — not owned by any one agent.
-**Input**: `{ finding: FindingSummary, rubric_version?: string }` — omitting `rubric_version` uses the current published version.
+## `severity_rubric.lookup(finding, license_type, rubric_version?)`
+**Used by**: Findings Author. **Shared, versioned platform service** (ADR-0020) — not owned by any one agent. Scoped per `license_type` (**resolves Principal Engineer audit 4.6/6.5** — the rubric is one shared service but a distinct versioned rubric per license type, per `agent-specifications.md`'s Settings/Admin section; without this parameter a second license type could never be looked up correctly through this contract).
+**Input**: `{ finding: FindingSummary, license_type: string, rubric_version?: string }` — omitting `rubric_version` uses that license type's current published version.
 **Output (ok)**: `{ status: "ok", severity: "low"|"medium"|"high", deadline_days: int, rubric_version: string }` — the returned `rubric_version` is what must be persisted alongside `severity` (ADR-0020's guardrail). Three values, lowercase wire form of `CONTEXT.md`'s canonical High/Medium/Low — no fourth "critical" tier (fixes Principal Engineer audit 4.1, which found this contract's four-value enum silently contradicting `CONTEXT.md`'s three-value definition; a code-enforced equality guardrail on this field means the mismatch fails loudly and late otherwise).
 **Output (error)**: `{ status: "error", reason: "rubric_service_unavailable" | "no_matching_rule" }` — `no_matching_rule` means the rubric has a genuine gap for this finding type; this is a data/config issue, not a transient failure, and routes to human review (a Lead/Approver assigns severity manually and this is flagged as a rubric-coverage gap to fix).
 **Timeout**: 3s (low-latency lookup service, not an LLM call).
