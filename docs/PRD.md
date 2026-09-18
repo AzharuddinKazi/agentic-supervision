@@ -2,12 +2,12 @@
 
 | | |
 |---|---|
-| **Version** | 1.1.0 |
+| **Version** | 1.2.0 |
 | **Status** | Pre-implementation (design complete, no code written) |
 | **Author** | FPSD (CBUAE) design process, captured by agent-assisted design sessions |
 | **Last updated** | 2026-09-19 |
 | **Reviewers** | Independent architecture reviews: 2026-09-15, 2026-09-17 (x2), 2026-09-18 — see `docs/reviews/` |
-| **Source of truth for decisions** | `docs/decision-log.md` (117 decisions, 18 rounds) and `docs/adr/0001`–`0032` |
+| **Source of truth for decisions** | `docs/decision-log.md` (138 decisions, 22 rounds) and `docs/adr/0001`–`0032` |
 | **Approved by** | Not yet — no FPSD leadership/document-owner sign-off has been recorded against this design |
 
 ## Changelog
@@ -16,8 +16,9 @@
 |---|---|---|
 | 1.0.0 | 2026-09-19 | Initial version, consolidating decisions 1–117 / ADR-0001–0032 |
 | 1.1.0 | 2026-09-19 | Fixed HITL checkpoint list (§8) to match the canonical 9-row table in `agent-specifications.md` — added the missing Gap-analysis review, Pre-AG Sign-off, AG review loop, and Pre-exit concerns loop checkpoints; added `docs/reviews/` as a second source-of-truth tier (§13); added baseline/pilot/owner open items (§11); flagged missing current-state baseline (§9). Per independent audit, `.scratch/prd-tdd-audit-2026-09-19.md` (not committed). |
+| 1.2.0 | 2026-09-19 | `docs/decision-log.md` backfilled with Rounds 19–22 (decisions 118–138), formally absorbing the 2026-09-17/18 Principal Engineer audit fixes that previously lived only in `docs/reviews/`. Updated decision/round counts here accordingly (117→138, 18→22 rounds); simplified §13's reference-map row now that the coverage gap is closed. |
 
-This document exists because the design process (18 rounds of decisions, 32 ADRs, 3 independent architecture reviews) has outgrown any single conversation. If you are reorienting on "what are we actually building," start here. For *why* a specific call was made, follow the cross-references into `docs/decision-log.md`.
+This document exists because the design process (22 rounds of decisions, 32 ADRs, 4 independent architecture reviews) has outgrown any single conversation. If you are reorienting on "what are we actually building," start here. For *why* a specific call was made, follow the cross-references into `docs/decision-log.md`.
 
 ---
 
@@ -184,7 +185,7 @@ These are tracked in full in `docs/decision-log.md` §"Open items"; the headline
 
 | Question | Where to look |
 |---|---|
-| "Has X already been decided?" | `docs/decision-log.md` first, **and `docs/reviews/` second** — several 2026-09-17/18 Principal Engineer audit fixes (e.g. the Pre-AG Sign-off checkpoint) landed directly in `agent-specifications.md`/ADRs without a decision-log round yet; see the coverage-gap note at the top of `docs/decision-log.md` |
+| "Has X already been decided?" | `docs/decision-log.md` (Rounds 20/22 now cover the 2026-09-17/18 Principal Engineer audit fixes, e.g. the Pre-AG Sign-off checkpoint) — read `docs/reviews/` directly only when you need a finding's full original text, not a summary |
 | "Why was X decided this way?" | `docs/decision-log.md`, cross-referenced to the ADR |
 | Terminology / glossary | `CONTEXT.md` |
 | Per-agent contract (inputs/outputs/guardrails/definition-of-done) | `docs/architecture/agent-specifications.md` — canonical for the HITL checkpoint table (§8 here summarizes it, doesn't replace it) |

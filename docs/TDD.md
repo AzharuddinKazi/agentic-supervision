@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Version** | 1.1.0 |
+| **Version** | 1.2.0 |
 | **Status** | Design complete, pre-implementation |
 | **Last updated** | 2026-09-19 |
 | **Companion doc** | `docs/PRD.md` (what and why, for a product/business reader) |
@@ -15,8 +15,9 @@
 |---|---|---|
 | 1.0.0 | 2026-09-19 | Initial version, consolidating decisions 1–117 / ADR-0001–0032 |
 | 1.1.0 | 2026-09-19 | Rewrote §8 Rollout to separate build order from a real launch plan (shadow mode, pilot, go/no-go gate, rollback trigger distinct from ADR-0023's model-swap canary); added an unfilled "Approved by" field. Per independent audit, `.scratch/prd-tdd-audit-2026-09-19.md` (not committed). |
+| 1.2.0 | 2026-09-19 | Updated decision-count reference (117→138) now that `docs/decision-log.md` Rounds 19–22 formally cover the 2026-09-17/18 Principal Engineer audit fixes. |
 
-This is the engineering-facing counterpart to `docs/PRD.md`. It describes the system as currently designed: components, data flow, contracts, and the cross-cutting concerns a reviewer would expect in a Google-style design doc. No code exists yet — this describes the target, distilled from `docs/decision-log.md` (117 decisions) and `docs/adr/0001`–`0032`. Treat those two as the source of truth if anything here goes stale; this document summarizes, it doesn't supersede.
+This is the engineering-facing counterpart to `docs/PRD.md`. It describes the system as currently designed: components, data flow, contracts, and the cross-cutting concerns a reviewer would expect in a Google-style design doc. No code exists yet — this describes the target, distilled from `docs/decision-log.md` (138 decisions) and `docs/adr/0001`–`0032`. Treat those two as the source of truth if anything here goes stale; this document summarizes, it doesn't supersede.
 
 ---
 
