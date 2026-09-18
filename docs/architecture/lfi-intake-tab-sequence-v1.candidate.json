@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Intake Tab — Auto Status + Override Call Sequence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action / tool call" },
+        "emphasis": { "label": "Status-changing write" },
+        "security": { "label": "Gated human action" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "lfi_sftp", "type": "external", "label": "LFI SFTP Drop", "sublabel": "external, outside app" },
+    { "id": "ingestion_adapter", "type": "cloud", "label": "Ingestion Adapter", "sublabel": "deterministic tool" },
+    { "id": "intake_tracker", "type": "backend", "label": "Intake Tracker", "sublabel": "rule-based service" },
+    { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "human, Intake tab" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only" }
+  ],
+  "segments": [
+    { "from": 150, "to": 298, "label": "Auto ingest + status check" },
+    { "from": 314, "to": 444, "label": "False negative → manual override" },
+    { "from": 460, "to": 590, "label": "Confirmed malformed → resubmission" }
+  ],
+  "messages": [
+    { "from": "lfi_sftp", "to": "ingestion_adapter", "y": 180, "label": "document appears at SFTP root", "variant": "default" },
+    { "from": "ingestion_adapter", "to": "intake_tracker", "y": 222, "label": "list_documents(lfi_id)", "variant": "default" },
+    { "from": "intake_tracker", "to": "ingestion_adapter", "y": 264, "label": "get_metadata(doc_id) — format + presence check", "variant": "return" },
+
+    { "from": "intake_tracker", "to": "lead_approver", "y": 316, "label": "flagged: suspicious (false negative)", "variant": "default" },
+    { "from": "lead_approver", "to": "intake_tracker", "y": 358, "label": "manual override + required reason", "variant": "security", "note": "distinct event type, decision 93" },
+    { "from": "intake_tracker", "to": "audit_trail", "y": 400, "label": "log_checkpoint(intake.override, reason)", "variant": "emphasis" },
+
+    { "from": "intake_tracker", "to": "lead_approver", "y": 462, "label": "flagged: suspicious (confirmed malformed)", "variant": "default" },
+    { "from": "lead_approver", "to": "intake_tracker", "y": 504, "label": "request resubmission", "variant": "security", "note": "true positive, not overridden" },
+    { "from": "intake_tracker", "to": "audit_trail", "y": 546, "label": "log_checkpoint(intake.resubmission_requested)", "variant": "emphasis", "note": "intake_status reverts to pending, fixes audit 2.11" }
+  ],
+  "activations": [
+    { "participant": "ingestion_adapter", "from": 170, "to": 274, "type": "cloud" },
+    { "participant": "intake_tracker", "from": 212, "to": 556, "type": "backend" },
+    { "participant": "audit_trail", "from": 390, "to": 410, "type": "database" },
+    { "participant": "audit_trail", "from": 536, "to": 556, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Override vs. resubmission are different outcomes (decision 93; fixes audit 2.11)",
+      "items": [
+        "A false negative (scanned/renamed file the automated check misreads) is overridden by Lead/Approver with a required reason, logged as a distinct event type from the automated status — the audit trail always shows machine-check vs. human-override provenance",
+        "A confirmed true positive never gets overridden — it routes to \"request resubmission\" instead, reverting intake_status to pending so all_submitted can't fire until the LFI actually resubmits"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Covers the call sequence behind lfi-intake-tab-v1.html's lane/phase view; document open/download via the Ingestion Adapter (decision 94, no custom viewer) isn't a call worth its own message here",
+        "The Ingestion Adapter's own poll/fetch/SFTP cycle is drawn in lfi-pipeline-v1.html, not repeated here. Every write here routes through log_checkpoint() (tool-contracts.md), same single write path as every other checkpoint"
+      ]
+    }
+  ]
+}

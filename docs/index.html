@@ -156,6 +156,42 @@
     </a>
   </div>
 
+  <h2>Examiner Dashboard — Call Sequences</h2>
+  <div class="grid">
+    <a class="card" href="architecture/lfi-intake-tab-sequence-v1.html">
+      <div class="name">Intake Tab</div>
+      <div class="desc">Auto ingest/status-check tool calls, then the override vs. resubmission split.</div>
+    </a>
+    <a class="card" href="architecture/lfi-gap-analysis-resolution-sequence-v1.html">
+      <div class="name">Gap Analysis Resolution</div>
+      <div class="desc">The two-option resolution call sequence and the auto-inferred completion read.</div>
+    </a>
+    <a class="card" href="architecture/lfi-supervision-signoff-sequence-v1.html">
+      <div class="name">Supervision-Question Sign-off</div>
+      <div class="desc">Draft → Meeting Facilitator's interrupt() → per-question sign-off loop.</div>
+    </a>
+    <a class="card" href="architecture/lfi-ag-feedback-review-sequence-v1.html">
+      <div class="name">AG Feedback Review</div>
+      <div class="desc">Raw feedback → LLM summary → gated confirm → redraft trigger.</div>
+    </a>
+    <a class="card" href="architecture/lfi-further-submission-review-sequence-v1.html">
+      <div class="name">Further-Submission Review</div>
+      <div class="desc">Per-item sign-off, manual relay to the LFI, and round-2 intake into Sufficiency Check.</div>
+    </a>
+    <a class="card" href="architecture/lfi-findings-signoff-sequence-v1.html">
+      <div class="name">Findings Sign-off</div>
+      <div class="desc">Qual and quant per-finding sign-off loops feeding one conjunction, never reconciled.</div>
+    </a>
+    <a class="card" href="architecture/lfi-audit-log-scope-sequence-v1.html">
+      <div class="name">Audit Log — Write Path + Reach</div>
+      <div class="desc">log_checkpoint()'s single write path, then the within-exam vs. portfolio-wide read split.</div>
+    </a>
+    <a class="card" href="architecture/lfi-rubric-editor-sequence-v1.html">
+      <div class="name">Severity Rubric Editor</div>
+      <div class="desc">Edit → new version → audit-derived history list → lookup by license type.</div>
+    </a>
+  </div>
+
   <footer>LFI Examination Pipeline — architecture documentation, generated with archify.</footer>
 </div>
 </body>

@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Findings Sign-off — Qual/Quant Tracks Never Merged, Call Sequence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 950],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action / tool call" },
+        "emphasis": { "label": "Track-complete write" },
+        "security": { "label": "Gated human action" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "findings_author", "type": "messagebus", "label": "Findings Author", "sublabel": "drafts both tracks" },
+    { "id": "quant_analysis", "type": "cloud", "label": "quant_analysis.compute()", "sublabel": "deterministic tool" },
+    { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "per-finding sign-off" },
+    { "id": "state_store", "type": "database", "label": "LangGraph State", "sublabel": "findings[]" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only" }
+  ],
+  "segments": [
+    { "from": 150, "to": 298, "label": "Drafted — two separate tracks" },
+    { "from": 314, "to": 486, "label": "Qual sign-off, per-finding" },
+    { "from": 502, "to": 674, "label": "Quant sign-off, per-finding" },
+    { "from": 690, "to": 790, "label": "Both complete → transmittal letter" }
+  ],
+  "messages": [
+    { "from": "findings_author", "to": "state_store", "y": 180, "label": "write findings[] qualitative draft (compliance_verdicts[])", "variant": "default" },
+    { "from": "findings_author", "to": "quant_analysis", "y": 222, "label": "compute(edm_ref) — never computed by the LLM itself", "variant": "default" },
+    { "from": "quant_analysis", "to": "findings_author", "y": 264, "label": "traceable EdmQueryRef", "variant": "return" },
+
+    { "from": "lead_approver", "to": "state_store", "y": 348, "label": "qual finding N: accept / edit / reject", "variant": "security" },
+    { "from": "state_store", "to": "audit_trail", "y": 390, "label": "log_checkpoint(findings.qual_signoff, finding_id)", "variant": "emphasis" },
+    { "from": "state_store", "to": "lead_approver", "y": 432, "label": "loop until qual track complete", "variant": "default" },
+
+    { "from": "lead_approver", "to": "state_store", "y": 536, "label": "quant finding N: accept / edit / reject", "variant": "security" },
+    { "from": "state_store", "to": "audit_trail", "y": 578, "label": "log_checkpoint(findings.quant_signoff, finding_id)", "variant": "emphasis" },
+    { "from": "state_store", "to": "lead_approver", "y": 620, "label": "loop until quant track complete", "variant": "default" },
+
+    { "from": "state_store", "to": "findings_author", "y": 724, "label": "both tracks complete (conjunction, never reconciled)", "variant": "return" },
+    { "from": "findings_author", "to": "state_store", "y": 766, "label": "write transmittal_letter_draft, pre_exit_deck_draft", "variant": "emphasis", "note": "download-only in v1, decision 102" }
+  ],
+  "activations": [
+    { "participant": "findings_author", "from": 170, "to": 776, "type": "messagebus" },
+    { "participant": "quant_analysis", "from": 212, "to": 274, "type": "cloud" },
+    { "participant": "state_store", "from": 338, "to": 442, "type": "database" },
+    { "participant": "audit_trail", "from": 380, "to": 400, "type": "database" },
+    { "participant": "state_store", "from": 526, "to": 630, "type": "database" },
+    { "participant": "audit_trail", "from": 568, "to": 588, "type": "database" },
+    { "participant": "state_store", "from": 714, "to": 776, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Why the tracks stay separate (ADR-0009/0011)",
+      "items": [
+        "Drafted, shown, and signed off in visually separate calls, never one merged review — a shared sign-off call would imply a comparison the two tracks must never make",
+        "\"Both Signed Off\" is a conjunction of two independent per-finding completions, not a reconciliation call — nothing here checks that the tracks agree"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Per-finding severity guardrail (ADR-0017/0020, severity_rubric.lookup()) is drawn in agent-specifications.md's contract, not repeated here",
+        "Transmittal letter and pre-exit deck stay download-only in v1 (decision 102) — no in-app rendering call exists yet"
+      ]
+    }
+  ]
+}

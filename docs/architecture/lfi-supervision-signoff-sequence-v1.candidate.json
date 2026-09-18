@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Supervision-Question Sign-off — Pre-Meeting Call Sequence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action / tool call" },
+        "emphasis": { "label": "State write" },
+        "security": { "label": "Gated human action" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "compliance_analyst", "type": "messagebus", "label": "Compliance Analyst", "sublabel": "drafts questions" },
+    { "id": "meeting_facilitator", "type": "messagebus", "label": "Meeting Facilitator", "sublabel": "finalizes + raises" },
+    { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "human, per-question" },
+    { "id": "state_store", "type": "database", "label": "LangGraph State", "sublabel": "supervision_questions[]" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only" }
+  ],
+  "segments": [
+    { "from": 150, "to": 256, "label": "Draft" },
+    { "from": 272, "to": 340, "label": "Finalize + raise interrupt()" },
+    { "from": 356, "to": 570, "label": "Per-question sign-off loop" },
+    { "from": 586, "to": 700, "label": "List finalized → meeting ready" }
+  ],
+  "messages": [
+    { "from": "compliance_analyst", "to": "state_store", "y": 180, "label": "write supervision_questions[] draft + gaps/strengths", "variant": "default" },
+    { "from": "compliance_analyst", "to": "meeting_facilitator", "y": 222, "label": "hand off draft list", "variant": "default" },
+
+    { "from": "meeting_facilitator", "to": "state_store", "y": 296, "label": "interrupt() — raise for review", "variant": "emphasis", "note": "Meeting Facilitator owns the interrupt, fixes audit 2.4" },
+
+    { "from": "state_store", "to": "lead_approver", "y": 380, "label": "present question N of M", "variant": "return" },
+    { "from": "lead_approver", "to": "state_store", "y": 422, "label": "accept / edit / reject question N", "variant": "security" },
+    { "from": "state_store", "to": "audit_trail", "y": 464, "label": "log_checkpoint(supervision_question.disposed, disposition)", "variant": "emphasis" },
+    { "from": "state_store", "to": "lead_approver", "y": 506, "label": "loop: next undisposed question", "variant": "default", "note": "per-question, matches human-agreement-rate metric (ADR-0016)" },
+
+    { "from": "state_store", "to": "meeting_facilitator", "y": 610, "label": "every question disposed → list finalized", "variant": "return" },
+    { "from": "meeting_facilitator", "to": "state_store", "y": 652, "label": "write meeting_ready (before hard deadline)", "variant": "emphasis" },
+    { "from": "meeting_facilitator", "to": "audit_trail", "y": 686, "label": "log_checkpoint(supervision_list.finalized)", "variant": "emphasis" }
+  ],
+  "activations": [
+    { "participant": "state_store", "from": 170, "to": 196, "type": "database" },
+    { "participant": "state_store", "from": 286, "to": 306, "type": "database" },
+    { "participant": "state_store", "from": 370, "to": 516, "type": "database" },
+    { "participant": "audit_trail", "from": 454, "to": 474, "type": "database" },
+    { "participant": "state_store", "from": 600, "to": 662, "type": "database" },
+    { "participant": "audit_trail", "from": 676, "to": 696, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Per-question, not whole-list (decision 97; ADR-0016)",
+      "items": [
+        "The list-level checkpoint completes only once every question has an individual accept/edit/reject disposition — never a single approve-all action, matching the human-agreement-rate metric's per-item design",
+        "Compliance Analyst drafts; Meeting Facilitator finalizes and owns the interrupt() (agent-specifications.md (a)) — fixes audit 2.4's wrong-agent attribution"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "This is the pre-meeting checkpoint, distinct from the post-meeting Further-Submission Review (decision 99, lfi-further-submission-review-sequence-v1.html) — the two cover different artifacts at different points in the flow",
+        "The citation-grounding source of these questions is drawn in lfi-guardrail-citation-grounding-v1.html, not repeated here. Every write here routes through log_checkpoint(), same single write path as every other checkpoint"
+      ]
+    }
+  ]
+}

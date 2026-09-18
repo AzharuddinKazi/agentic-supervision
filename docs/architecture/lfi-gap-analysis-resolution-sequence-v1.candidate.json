@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Gap Analysis Resolution — Two-Option Call Sequence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action" },
+        "emphasis": { "label": "Resolution write" },
+        "security": { "label": "Gated human action" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "compliance_analyst", "type": "messagebus", "label": "Compliance Analyst", "sublabel": "flags item" },
+    { "id": "examiner_app", "type": "frontend", "label": "Examiner Dashboard", "sublabel": "Gap Analysis tab" },
+    { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "human" },
+    { "id": "state_store", "type": "database", "label": "LangGraph State", "sublabel": "compliance_verdicts[]" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only" }
+  ],
+  "segments": [
+    { "from": 150, "to": 256, "label": "Item flagged" },
+    { "from": 272, "to": 444, "label": "Option A — accept as insufficient" },
+    { "from": 460, "to": 632, "label": "Option B — human-asserted verdict" },
+    { "from": 648, "to": 720, "label": "Auto-inferred completion (decision 96)" }
+  ],
+  "messages": [
+    { "from": "compliance_analyst", "to": "examiner_app", "y": 180, "label": "flagged item: ungrounded / low-confidence", "variant": "default" },
+    { "from": "examiner_app", "to": "lead_approver", "y": 222, "label": "present resolution choice — 2 options only", "variant": "default" },
+
+    { "from": "lead_approver", "to": "examiner_app", "y": 306, "label": "accept: insufficient", "variant": "security" },
+    { "from": "examiner_app", "to": "state_store", "y": 348, "label": "write compliance_verdicts[verdict: insufficient_grounding]", "variant": "emphasis" },
+    { "from": "examiner_app", "to": "state_store", "y": 390, "label": "append supervision_questions[] entry", "variant": "emphasis", "note": "→ Supervision Sign-off" },
+    { "from": "examiner_app", "to": "audit_trail", "y": 424, "label": "log_checkpoint(gap_analysis.accepted_insufficient)", "variant": "emphasis" },
+
+    { "from": "lead_approver", "to": "examiner_app", "y": 494, "label": "assert verdict + human-supplied citation", "variant": "security" },
+    { "from": "examiner_app", "to": "state_store", "y": 536, "label": "write compliance_verdicts[asserted_by: \"human\"]", "variant": "emphasis", "note": "distinct from asserted_by: \"model\"" },
+    { "from": "examiner_app", "to": "audit_trail", "y": 578, "label": "log_checkpoint(gap_analysis.human_asserted)", "variant": "emphasis" },
+
+    { "from": "examiner_app", "to": "state_store", "y": 664, "label": "check: every flagged item resolved + every question has a verdict?", "variant": "default" },
+    { "from": "state_store", "to": "examiner_app", "y": 706, "label": "analysis complete — inferred, no sign-off button", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "examiner_app", "from": 170, "to": 716, "type": "frontend" },
+    { "participant": "state_store", "from": 338, "to": 400, "type": "database" },
+    { "participant": "audit_trail", "from": 414, "to": 434, "type": "database" },
+    { "participant": "state_store", "from": 526, "to": 548, "type": "database" },
+    { "participant": "audit_trail", "from": 568, "to": 588, "type": "database" },
+    { "participant": "state_store", "from": 654, "to": 716, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Two options, not three (decision 95)",
+      "items": [
+        "A third option — targeted re-run of Compliance Analyst on a single flagged item — was dropped for v1: nothing in the LangGraph shape supports partial re-invocation from the UI",
+        "\"Accept as insufficient\" appends a supervision_questions[] row; \"human-asserted verdict\" writes asserted_by: \"human\" so the audit trail never conflates a human call with a model call"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "\"Analysis Complete\" (decision 96) is a read of compliance_verdicts[] state, not a write — no separate sign-off call attests to anything the two resolution writes don't already determine",
+        "The citation-grounding call sequence that produces the initial flag is drawn in lfi-guardrail-citation-grounding-v1.html, not repeated here"
+      ]
+    }
+  ]
+}

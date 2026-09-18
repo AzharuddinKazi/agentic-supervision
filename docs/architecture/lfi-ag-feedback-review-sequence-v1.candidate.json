@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "AG Feedback Review — Redraft Guardrail Call Sequence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action / tool call" },
+        "emphasis": { "label": "Guardrail-relevant write" },
+        "security": { "label": "Gated human action" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "captures raw feedback" },
+    { "id": "approval_coordinator", "type": "messagebus", "label": "Approval Coordinator", "sublabel": "summarizes" },
+    { "id": "examiner_app", "type": "frontend", "label": "Examiner Dashboard", "sublabel": "Feedback Review screen" },
+    { "id": "findings_author", "type": "messagebus", "label": "Findings Author", "sublabel": "redrafts on confirm" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only" }
+  ],
+  "segments": [
+    { "from": 150, "to": 256, "label": "Capture raw feedback" },
+    { "from": 272, "to": 382, "label": "LLM summarize (descriptive only)" },
+    { "from": 398, "to": 528, "label": "Human checkpoint — confirm before redraft" },
+    { "from": 544, "to": 656, "label": "Redraft loop → back to awaiting AG" }
+  ],
+  "messages": [
+    { "from": "lead_approver", "to": "examiner_app", "y": 180, "label": "AG Showcase feedback: \"Changes Requested\" + required raw text", "variant": "security" },
+    { "from": "examiner_app", "to": "approval_coordinator", "y": 222, "label": "raw_feedback captured", "variant": "default" },
+
+    { "from": "approval_coordinator", "to": "examiner_app", "y": 306, "label": "summarize_feedback() — descriptive only", "variant": "default" },
+
+    { "from": "examiner_app", "to": "lead_approver", "y": 380, "label": "AG Feedback Review — raw + summary side-by-side", "variant": "default", "note": "only the summary is editable" },
+    { "from": "lead_approver", "to": "examiner_app", "y": 422, "label": "confirm (summary not auto-applied without this)", "variant": "security" },
+    { "from": "examiner_app", "to": "audit_trail", "y": 464, "label": "log_checkpoint(ag_feedback.reviewed)", "variant": "emphasis" },
+    { "from": "examiner_app", "to": "findings_author", "y": 506, "label": "confirmed summary → trigger redraft", "variant": "emphasis" },
+
+    { "from": "findings_author", "to": "examiner_app", "y": 580, "label": "redraft complete", "variant": "return" },
+    { "from": "examiner_app", "to": "audit_trail", "y": 614, "label": "log_checkpoint(ag_status: awaiting_ag)", "variant": "emphasis", "note": "loop, also reused for pre-exit (decision 105)" },
+    { "from": "examiner_app", "to": "lead_approver", "y": 646, "label": "resubmit for AG review", "variant": "default" }
+  ],
+  "activations": [
+    { "participant": "examiner_app", "from": 170, "to": 656, "type": "frontend" },
+    { "participant": "approval_coordinator", "from": 212, "to": 316, "type": "messagebus" },
+    { "participant": "audit_trail", "from": 454, "to": 474, "type": "database" },
+    { "participant": "findings_author", "from": 496, "to": 590, "type": "messagebus" },
+    { "participant": "audit_trail", "from": 604, "to": 624, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Guardrail (ADR-0017, closes Critical Finding #1)",
+      "items": [
+        "The LLM-summarized feedback is never passed directly to Findings Author — it surfaces as its own reviewable artifact, and only Lead/Approver confirmation triggers the redraft call",
+        "Closes the gap where an ungrounded AI summary could change a regulatory document on something no human actually said. \"Approved\" needs no elaboration (decision 103) and isn't drawn here"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "The pre-exit concerns loop reuses this exact redraft/confirm call sequence rather than a separate \"Exit Deck\" screen (decision 105)",
+        "ag_status has exactly 5 values (agent-specifications.md): drafted → awaiting_ag → changes_requested → ag_feedback_reviewed → approved — \"redraft\" is Findings Author's action on confirm, not a 6th stored status"
+      ]
+    }
+  ]
+}

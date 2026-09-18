@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Further-Submission Review — New HITL Checkpoint Call Sequence (decision 99)",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action / tool call" },
+        "emphasis": { "label": "State write" },
+        "security": { "label": "Gated human action" },
+        "dashed": { "label": "Manual relay, outside the app" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "meeting_facilitator", "type": "messagebus", "label": "Meeting Facilitator", "sublabel": "drafts requests" },
+    { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "per-item review" },
+    { "id": "examiner", "type": "external", "label": "Examiner", "sublabel": "relays manually" },
+    { "id": "lfi", "type": "external", "label": "LFI", "sublabel": "outside the app" },
+    { "id": "intake_tracker", "type": "backend", "label": "Intake Tracker", "sublabel": "round-2 intake" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "append-only" }
+  ],
+  "segments": [
+    { "from": 150, "to": 256, "label": "Drafted" },
+    { "from": 272, "to": 444, "label": "Per-item review (new HITL, decision 99)" },
+    { "from": 460, "to": 590, "label": "Manual relay — app never messages LFI" },
+    { "from": 606, "to": 720, "label": "Round-2 intake → Sufficiency Check" }
+  ],
+  "messages": [
+    { "from": "meeting_facilitator", "to": "lead_approver", "y": 180, "label": "further_submission_requests[] drafted from meeting minutes", "variant": "default" },
+
+    { "from": "lead_approver", "to": "meeting_facilitator", "y": 306, "label": "accept / edit / reject, item by item", "variant": "security" },
+    { "from": "meeting_facilitator", "to": "audit_trail", "y": 348, "label": "log_checkpoint(further_submission.item_reviewed)", "variant": "emphasis" },
+    { "from": "lead_approver", "to": "meeting_facilitator", "y": 390, "label": "loop until every item resolved → list finalized", "variant": "default" },
+
+    { "from": "meeting_facilitator", "to": "examiner", "y": 464, "label": "finalized list ready to relay", "variant": "default" },
+    { "from": "examiner", "to": "lfi", "y": 506, "label": "relay requests (manual, like the original RFI)", "variant": "dashed" },
+    { "from": "lfi", "to": "intake_tracker", "y": 548, "label": "round-2 documents submitted via SFTP", "variant": "dashed" },
+
+    { "from": "intake_tracker", "to": "meeting_facilitator", "y": 662, "label": "round_submitted(2)", "variant": "emphasis", "note": "each finalized request became a new rfi_questions[row round:2, source:further_submission]; feeds Sufficiency Check, not Gap Analysis's all_submitted — fixes audit 2.7" },
+    { "from": "meeting_facilitator", "to": "audit_trail", "y": 700, "label": "log_checkpoint(further_submission.round2_intake)", "variant": "emphasis" }
+  ],
+  "activations": [
+    { "participant": "meeting_facilitator", "from": 170, "to": 710, "type": "messagebus" },
+    { "participant": "audit_trail", "from": 338, "to": 358, "type": "database" },
+    { "participant": "intake_tracker", "from": 538, "to": 672, "type": "backend" },
+    { "participant": "audit_trail", "from": 690, "to": 710, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "A real gap this round closed (decision 99)",
+      "items": [
+        "further_submission_requests[] previously had no sign-off checkpoint — distinct from the pre-meeting supervision-question sign-off. Raised by Meeting Facilitator, resolved by Lead/Approver, same per-item accept/edit/reject pattern as every other checkpoint",
+        "Round-2 documents flow through the same automated Intake Tracker as round-1 (decision 100): each finalized request becomes a new rfi_questions[] row, firing round_submitted(2) into Sufficiency Check, not Gap Analysis's all_submitted (fixes audit 2.7)"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "Covers only the gap between draft and relay/round-2 intake. Sufficiency Check itself (a separate, later gate judging whether round-2 responses actually close the meeting's gaps) is drawn in lfi-workflow-phase2-meeting-v1.html, not repeated here",
+        "SLA duration not yet set for this checkpoint — tune empirically once real cases exist, same treatment as decisions 30/54"
+      ]
+    }
+  ]
+}

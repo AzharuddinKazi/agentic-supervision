@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Audit Log — Write Path + Reach-Gated Read Call Sequence (decision 106)",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action / tool call" },
+        "emphasis": { "label": "Append-only write" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "any_agent", "type": "messagebus", "label": "Any Agent / Checkpoint", "sublabel": "sign-off, override, correction" },
+    { "id": "log_checkpoint", "type": "cloud", "label": "log_checkpoint()", "sublabel": "single write path" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "hash-chained, append-only" },
+    { "id": "examiner_lead", "type": "frontend", "label": "Examiner / Lead-Approver", "sublabel": "within-exam reach" },
+    { "id": "auditor", "type": "external", "label": "Auditor", "sublabel": "portfolio-wide landing page" }
+  ],
+  "segments": [
+    { "from": 150, "to": 340, "label": "Write path — every checkpoint event" },
+    { "from": 356, "to": 486, "label": "Within-exam read (Examiner, Lead/Approver)" },
+    { "from": 502, "to": 632, "label": "Portfolio-wide read (Auditor)" }
+  ],
+  "messages": [
+    { "from": "any_agent", "to": "log_checkpoint", "y": 180, "label": "log_checkpoint(state_before, state_after, actor, event_type)", "variant": "default" },
+    { "from": "log_checkpoint", "to": "audit_trail", "y": 222, "label": "derive idempotency_key, prev_hash, entry_hash — write", "variant": "emphasis" },
+    { "from": "audit_trail", "to": "log_checkpoint", "y": 264, "label": "{ status: ok, entry_id, entry_hash }", "variant": "return", "note": "chain_integrity_violation halts + pages, never silently retries" },
+
+    { "from": "examiner_lead", "to": "audit_trail", "y": 396, "label": "read log — scoped to assigned examination only", "variant": "default" },
+    { "from": "audit_trail", "to": "examiner_lead", "y": 438, "label": "full detail, within-exam only", "variant": "return" },
+
+    { "from": "auditor", "to": "audit_trail", "y": 542, "label": "read log — cross-examination, portfolio landing page", "variant": "default" },
+    { "from": "audit_trail", "to": "auditor", "y": 584, "label": "same full detail, no redaction", "variant": "return", "note": "reach differs by role, content never does — voided examinations stay queryable (ADR-0024 §4)" }
+  ],
+  "activations": [
+    { "participant": "log_checkpoint", "from": 170, "to": 274, "type": "cloud" },
+    { "participant": "audit_trail", "from": 212, "to": 274, "type": "database" },
+    { "participant": "audit_trail", "from": 386, "to": 448, "type": "database" },
+    { "participant": "audit_trail", "from": 532, "to": 594, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Scope is the only difference (decision 106)",
+      "items": [
+        "All three roles — Examiner, Lead/Approver, Auditor — read identical full detail; nothing here returns a redacted or summarized version depending on who's asking",
+        "The real distinction is reach: Examiner/Lead-Approver only reach the log from within an examination they're assigned to, while Auditor's read is portfolio-wide and is their effective landing page — they hold no drafting/sign-off role that needs the per-examination workspace otherwise"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "log_checkpoint() is the single write path into audit_log[] for every agent, at every interrupt() resolution and state transition (tool-contracts.md) — no agent writes an AuditLogEntry any other way",
+        "Hash-chain integrity checking and retry policy (2s timeout, 3 attempts, never retried on chain_integrity_violation) are the tool contract's job, not repeated in full here; schema/retention policy is ADR-0024, not this diagram"
+      ]
+    }
+  ]
+}

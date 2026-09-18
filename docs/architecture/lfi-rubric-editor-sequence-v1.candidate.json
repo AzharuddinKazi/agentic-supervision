@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Severity Rubric Editor — Edit-to-Lookup Call Sequence",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1050, 900],
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "default": { "label": "UI action / tool call" },
+        "emphasis": { "label": "Versioned write" },
+        "return": { "label": "Response" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "lead_approver", "type": "external", "label": "Lead/Approver", "sublabel": "Settings/Admin" },
+    { "id": "rubric_editor", "type": "frontend", "label": "Rubric Editor", "sublabel": "outside any exam workspace" },
+    { "id": "rubric_service", "type": "cloud", "label": "Severity Rubric Service", "sublabel": "shared, versioned (ADR-0020)" },
+    { "id": "audit_trail", "type": "database", "label": "Audit Trail Store", "sublabel": "rubric.version_changed events" },
+    { "id": "findings_author", "type": "messagebus", "label": "Findings Author", "sublabel": "caller, any examination" }
+  ],
+  "segments": [
+    { "from": 150, "to": 298, "label": "Edit + save — new version" },
+    { "from": 314, "to": 444, "label": "Inline prior-versions list" },
+    { "from": 460, "to": 590, "label": "Lookup, per license type" }
+  ],
+  "messages": [
+    { "from": "lead_approver", "to": "rubric_editor", "y": 180, "label": "open editor — shows current version vN for license type", "variant": "default" },
+    { "from": "lead_approver", "to": "rubric_editor", "y": 222, "label": "edit + save", "variant": "default" },
+    { "from": "rubric_editor", "to": "rubric_service", "y": 264, "label": "write new version vN+1", "variant": "emphasis" },
+    { "from": "rubric_service", "to": "audit_trail", "y": 306, "label": "log_checkpoint(rubric.version_changed)", "variant": "emphasis" },
+
+    { "from": "rubric_editor", "to": "audit_trail", "y": 380, "label": "read: event_type = rubric.version_changed", "variant": "default" },
+    { "from": "audit_trail", "to": "rubric_editor", "y": 422, "label": "inline prior-versions list — fixes audit 4.7", "variant": "return", "note": "not the per-examination Audit Log tab, which Lead/Approver can't reach from outside an exam" },
+
+    { "from": "findings_author", "to": "rubric_service", "y": 506, "label": "severity_rubric.lookup(finding, license_type, rubric_version?)", "variant": "default" },
+    { "from": "rubric_service", "to": "findings_author", "y": 548, "label": "current published version for that license type (or pinned version)", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "rubric_editor", "from": 170, "to": 432, "type": "frontend" },
+    { "participant": "rubric_service", "from": 254, "to": 316, "type": "cloud" },
+    { "participant": "audit_trail", "from": 296, "to": 316, "type": "database" },
+    { "participant": "audit_trail", "from": 370, "to": 432, "type": "database" },
+    { "participant": "rubric_service", "from": 496, "to": 558, "type": "cloud" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "One rubric per license type, not per-examination (decision 84)",
+      "items": [
+        "Edited from a standalone Settings/Admin area outside any single examination's workspace, consistent with ADR-0020 treating it as a shared, versioned platform service — Lead/Approver access, no new admin role introduced",
+        "The editor shows current version plus an inline prior-versions list filtered from audit_log[] — not the per-examination Audit Log tab, which Lead/Approver can't reach from outside an examination anyway (fixes Principal Engineer audit 4.7)"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Diagram scope",
+      "items": [
+        "No separate version-browser screen is built (decision 110) — the inline list is the only history view",
+        "severity_rubric.lookup()'s omitted-rubric_version default (current published version for that license type) and its use inside Compliance Analyst/Findings Author's guardrails are in agent-specifications.md and tool-contracts.md, not repeated here"
+      ]
+    }
+  ]
+}
