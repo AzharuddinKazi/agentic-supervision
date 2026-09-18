@@ -70,9 +70,9 @@
 <body>
 <div class="wrap">
   <h1>LFI Examination Pipeline — Diagrams</h1>
-  <p class="subtitle">Interactive architecture, workflow, and sequence diagrams for the CBUAE LFI examination pipeline and Examiner Dashboard.</p>
+  <p class="subtitle">Ordered to follow the examination lifecycle top to bottom: system architecture, then Phase 1 → 2 → 3 in the order an examiner actually moves through them, with each screen's workflow view paired directly next to its call-sequence view.</p>
 
-  <h2>Core Architecture</h2>
+  <h2>1. System Architecture</h2>
   <div class="grid">
     <a class="card" href="architecture/lfi-pipeline-context-v1.html">
       <div class="name">Pipeline — Context View</div>
@@ -88,106 +88,114 @@
     </a>
   </div>
 
-  <h2>LangGraph Workflows</h2>
-  <div class="grid">
-    <a class="card" href="architecture/lfi-workflow-phase1-preexam-v1.html">
-      <div class="name">Phase 1 — Pre-Examination</div>
-      <div class="desc">Gap analysis, citation grounding, and supervision-question drafting.</div>
-    </a>
-    <a class="card" href="architecture/lfi-workflow-phase2-meeting-v1.html">
-      <div class="name">Phase 2 — Examination Meeting</div>
-      <div class="desc">Meeting minutes extraction, further-submission requests, and the sufficiency gate.</div>
-    </a>
-    <a class="card" href="architecture/lfi-workflow-phase3-postexam-v1.html">
-      <div class="name">Phase 3 — Post-Examination</div>
-      <div class="desc">Findings, AG showcase, and pre-exit revision loops.</div>
-    </a>
-    <a class="card" href="architecture/lfi-guardrail-citation-grounding-v1.html">
-      <div class="name">Citation-Grounding Guardrail</div>
-      <div class="desc">UML sequence diagram for the grounded-vs-ungrounded call sequence (ADR-0004/0018).</div>
-    </a>
-  </div>
-
-  <h2>Examiner Dashboard</h2>
+  <h2>2. Examiner Dashboard — Orientation</h2>
   <div class="grid">
     <a class="card" href="architecture/lfi-examiner-dashboard-userflow-v1.html">
       <div class="name">Navigation &amp; RBAC Userflow</div>
-      <div class="desc">Portfolio home → tabbed workspace → gated actions → auto-close.</div>
-    </a>
-    <a class="card" href="architecture/lfi-setup-tab-sequence-v1.html">
-      <div class="name">Setup Tab</div>
-      <div class="desc">Examination creation, RFI upload/parse/confirm, and post-creation edits.</div>
-    </a>
-    <a class="card" href="architecture/lfi-intake-tab-v1.html">
-      <div class="name">Intake Tab</div>
-      <div class="desc">Auto status check plus the Lead/Approver manual-override path.</div>
-    </a>
-    <a class="card" href="architecture/lfi-gap-analysis-resolution-v1.html">
-      <div class="name">Gap Analysis Resolution</div>
-      <div class="desc">The two allowed resolutions for a flagged item — no third option.</div>
-    </a>
-    <a class="card" href="architecture/lfi-supervision-signoff-v1.html">
-      <div class="name">Supervision-Question Sign-off</div>
-      <div class="desc">Per-question pre-meeting checkpoint.</div>
-    </a>
-    <a class="card" href="architecture/lfi-further-submission-review-v1.html">
-      <div class="name">Further-Submission Review</div>
-      <div class="desc">The new post-meeting HITL checkpoint before requests are relayed to the LFI.</div>
-    </a>
-    <a class="card" href="architecture/lfi-findings-signoff-v1.html">
-      <div class="name">Findings Sign-off</div>
-      <div class="desc">Qualitative and quantitative tracks, signed off separately, never reconciled.</div>
-    </a>
-    <a class="card" href="architecture/lfi-ag-feedback-review-v1.html">
-      <div class="name">AG Feedback Review</div>
-      <div class="desc">The redraft guardrail — an AI summary can never trigger a redraft without human confirmation.</div>
-    </a>
-    <a class="card" href="architecture/lfi-audit-log-scope-v1.html">
-      <div class="name">Audit Log — Scope by Role</div>
-      <div class="desc">Same full detail for every role; only the reach (per-exam vs. portfolio-wide) differs.</div>
-    </a>
-    <a class="card" href="architecture/lfi-notice-corpus-manager-sequence-v1.html">
-      <div class="name">Notice Corpus Manager</div>
-      <div class="desc">Upload → OCR → segment → human-confirm call sequence.</div>
-    </a>
-    <a class="card" href="architecture/lfi-rubric-editor-v1.html">
-      <div class="name">Severity Rubric Editor</div>
-      <div class="desc">Global, versioned settings screen shared across examinations.</div>
+      <div class="desc">Portfolio home → tabbed workspace → gated actions → auto-close. Start here before any individual tab below.</div>
     </a>
   </div>
 
-  <h2>Examiner Dashboard — Call Sequences</h2>
+  <h2>3. Phase 1 — Pre-Examination</h2>
   <div class="grid">
+    <a class="card" href="architecture/lfi-workflow-phase1-preexam-v1.html">
+      <div class="name">Phase 1 — LangGraph Workflow</div>
+      <div class="desc">The full pre-examination graph: gap analysis, citation grounding, and supervision-question drafting.</div>
+    </a>
+    <a class="card" href="architecture/lfi-setup-tab-sequence-v1.html">
+      <div class="name">3a. Setup Tab — Call Sequence</div>
+      <div class="desc">Examination creation, RFI upload/parse/confirm, and post-creation edits.</div>
+    </a>
+    <a class="card" href="architecture/lfi-intake-tab-v1.html">
+      <div class="name">3b. Intake Tab — Workflow</div>
+      <div class="desc">Auto status check plus the Lead/Approver manual-override path.</div>
+    </a>
     <a class="card" href="architecture/lfi-intake-tab-sequence-v1.html">
-      <div class="name">Intake Tab</div>
+      <div class="name">3b. Intake Tab — Call Sequence</div>
       <div class="desc">Auto ingest/status-check tool calls, then the override vs. resubmission split.</div>
     </a>
+    <a class="card" href="architecture/lfi-gap-analysis-resolution-v1.html">
+      <div class="name">3c. Gap Analysis Resolution — Workflow</div>
+      <div class="desc">The two allowed resolutions for a flagged item — no third option.</div>
+    </a>
     <a class="card" href="architecture/lfi-gap-analysis-resolution-sequence-v1.html">
-      <div class="name">Gap Analysis Resolution</div>
+      <div class="name">3c. Gap Analysis Resolution — Call Sequence</div>
       <div class="desc">The two-option resolution call sequence and the auto-inferred completion read.</div>
     </a>
+    <a class="card" href="architecture/lfi-guardrail-citation-grounding-v1.html">
+      <div class="name">3c. Citation-Grounding Guardrail</div>
+      <div class="desc">The grounded-vs-ungrounded call sequence feeding Gap Analysis's flags (ADR-0004/0018).</div>
+    </a>
+    <a class="card" href="architecture/lfi-supervision-signoff-v1.html">
+      <div class="name">3d. Supervision-Question Sign-off — Workflow</div>
+      <div class="desc">Per-question pre-meeting checkpoint — the exit gate from Phase 1.</div>
+    </a>
     <a class="card" href="architecture/lfi-supervision-signoff-sequence-v1.html">
-      <div class="name">Supervision-Question Sign-off</div>
+      <div class="name">3d. Supervision-Question Sign-off — Call Sequence</div>
       <div class="desc">Draft → Meeting Facilitator's interrupt() → per-question sign-off loop.</div>
     </a>
-    <a class="card" href="architecture/lfi-ag-feedback-review-sequence-v1.html">
-      <div class="name">AG Feedback Review</div>
-      <div class="desc">Raw feedback → LLM summary → gated confirm → redraft trigger.</div>
+  </div>
+
+  <h2>4. Phase 2 — Examination Meeting</h2>
+  <div class="grid">
+    <a class="card" href="architecture/lfi-workflow-phase2-meeting-v1.html">
+      <div class="name">Phase 2 — LangGraph Workflow</div>
+      <div class="desc">Meeting minutes extraction, further-submission requests, and the sufficiency gate.</div>
+    </a>
+    <a class="card" href="architecture/lfi-further-submission-review-v1.html">
+      <div class="name">4a. Further-Submission Review — Workflow</div>
+      <div class="desc">The post-meeting HITL checkpoint before requests are relayed to the LFI.</div>
     </a>
     <a class="card" href="architecture/lfi-further-submission-review-sequence-v1.html">
-      <div class="name">Further-Submission Review</div>
+      <div class="name">4a. Further-Submission Review — Call Sequence</div>
       <div class="desc">Per-item sign-off, manual relay to the LFI, and round-2 intake into Sufficiency Check.</div>
     </a>
+  </div>
+
+  <h2>5. Phase 3 — Post-Examination</h2>
+  <div class="grid">
+    <a class="card" href="architecture/lfi-workflow-phase3-postexam-v1.html">
+      <div class="name">Phase 3 — LangGraph Workflow</div>
+      <div class="desc">Findings, AG showcase, and pre-exit revision loops.</div>
+    </a>
+    <a class="card" href="architecture/lfi-findings-signoff-v1.html">
+      <div class="name">5a. Findings Sign-off — Workflow</div>
+      <div class="desc">Qualitative and quantitative tracks, signed off separately, never reconciled.</div>
+    </a>
     <a class="card" href="architecture/lfi-findings-signoff-sequence-v1.html">
-      <div class="name">Findings Sign-off</div>
+      <div class="name">5a. Findings Sign-off — Call Sequence</div>
       <div class="desc">Qual and quant per-finding sign-off loops feeding one conjunction, never reconciled.</div>
     </a>
+    <a class="card" href="architecture/lfi-ag-feedback-review-v1.html">
+      <div class="name">5b. AG Feedback Review — Workflow</div>
+      <div class="desc">The redraft guardrail — an AI summary can never trigger a redraft without human confirmation.</div>
+    </a>
+    <a class="card" href="architecture/lfi-ag-feedback-review-sequence-v1.html">
+      <div class="name">5b. AG Feedback Review — Call Sequence</div>
+      <div class="desc">Raw feedback → LLM summary → gated confirm → redraft trigger; same loop reused for pre-exit.</div>
+    </a>
+  </div>
+
+  <h2>6. Cross-Cutting &amp; Admin</h2>
+  <div class="grid">
+    <a class="card" href="architecture/lfi-audit-log-scope-v1.html">
+      <div class="name">Audit Log — Workflow</div>
+      <div class="desc">Same full detail for every role; only the reach (per-exam vs. portfolio-wide) differs.</div>
+    </a>
     <a class="card" href="architecture/lfi-audit-log-scope-sequence-v1.html">
-      <div class="name">Audit Log — Write Path + Reach</div>
+      <div class="name">Audit Log — Call Sequence</div>
       <div class="desc">log_checkpoint()'s single write path, then the within-exam vs. portfolio-wide read split.</div>
     </a>
+    <a class="card" href="architecture/lfi-notice-corpus-manager-sequence-v1.html">
+      <div class="name">Notice Corpus Manager — Call Sequence</div>
+      <div class="desc">Upload → OCR → segment → human-confirm call sequence. Settings/Admin, outside any single exam.</div>
+    </a>
+    <a class="card" href="architecture/lfi-rubric-editor-v1.html">
+      <div class="name">Severity Rubric Editor — Workflow</div>
+      <div class="desc">Global, versioned settings screen shared across examinations.</div>
+    </a>
     <a class="card" href="architecture/lfi-rubric-editor-sequence-v1.html">
-      <div class="name">Severity Rubric Editor</div>
+      <div class="name">Severity Rubric Editor — Call Sequence</div>
       <div class="desc">Edit → new version → audit-derived history list → lookup by license type.</div>
     </a>
   </div>
