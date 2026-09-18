@@ -1,5 +1,7 @@
 # LFI Examination Pipeline
 
+**Version 1.0.0** (baselined 2026-09-19 — reflects decisions 1–117 / ADR-0001–0032; prior revision history lives in `docs/decision-log.md`, not tracked as versions before this baseline).
+
 FPSD (Fraud Prevention and Supervision Department) at CBUAE runs periodic compliance examinations of Licensed Financial Institutions. This context is a multi-agent pipeline that augments (not replaces) the examiner team across the three phases of an examination: pre-examination intake and gap analysis, the examination meeting, and post-examination findings/reporting.
 
 ## Language

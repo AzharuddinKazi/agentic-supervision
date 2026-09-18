@@ -1,5 +1,7 @@
 # Agent Specifications — LFI Examination Pipeline v1
 
+**Version 1.0.0** (baselined 2026-09-19 — reflects decisions 1–117 / ADR-0001–0032; prior revision history lives in `docs/decision-log.md`, not tracked as versions before this baseline).
+
 Detailed contract for every agentic and non-agentic component in `docs/architecture/lfi-pipeline-v1.html` and `lfi-pipeline-deployment-v1.html`. Each agent is a LangGraph node (or small subgraph); this document is the source of truth for what to actually build — inputs, outputs, tools, model behavior, state, human checkpoints (with SLAs), and the observability/evaluation contract each agent must satisfy. Read `CONTEXT.md` for vocabulary and `docs/adr/` for the decisions behind these contracts before changing them.
 
 **The actual LangGraph node/edge/conditional-transition structure — not just this prose — lives in three workflow diagrams**, one per phase: `lfi-workflow-phase1-preexam-v1.html`, `lfi-workflow-phase2-meeting-v1.html`, `lfi-workflow-phase3-postexam-v1.html`. Read the relevant one before implementing a phase; it shows every guardrail branch, human checkpoint, and (Phase 2) the sufficiency-check gate that this document's prose alone does not make unambiguous.

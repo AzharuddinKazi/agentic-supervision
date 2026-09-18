@@ -22,8 +22,9 @@ CLAUDE.md                       Project instructions for AI coding agents workin
 
 ## Where to start
 
-- **`CONTEXT.md`** — read this first. It defines every domain term (LFI, RFI, notice/clause, supersession, EDM, finding, transmittal letter, etc.) as used in this project.
-- **`docs/decision-log.md`** — every question raised and decision made, in order (80 decisions across 17 rounds as of 2026-09-16), cross-referenced to ADRs. This is the committed, durable record — check it before reopening anything that looks settled, so a prior decision doesn't get silently re-litigated.
+- **`docs/PRD.md`** and **`docs/TDD.md`** — start here for a current-state snapshot ("what are we building and why," and "how is it built"). Both consolidate the full decision log into one reorientation point; check `docs/decision-log.md` only for the *why* behind a specific call.
+- **`CONTEXT.md`** — read this first for vocabulary. It defines every domain term (LFI, RFI, notice/clause, supersession, EDM, finding, transmittal letter, etc.) as used in this project.
+- **`docs/decision-log.md`** — every question raised and decision made, in order (117 decisions across 18 rounds as of 2026-09-17), cross-referenced to ADRs. This is the committed, durable record — check it before reopening anything that looks settled, so a prior decision doesn't get silently re-litigated.
 - **`docs/adr/`** — read the ADRs relevant to the area you're touching before making architectural changes. Each one records a decision, its rationale, and what alternative was rejected and why. `docs/decision-log.md` has a full ADR cross-reference table at the bottom.
 - **`docs/architecture/lfi-pipeline-context-v1.html`** — the v1 C4-style Context diagram: the pipeline as one system plus every external actor/system it touches (LFI, Shared Workspace, Notice source, EDM, SSO, FPSD examiner team, Assistant Governor). Start here for the fully-zoomed-out view before dropping into the container-level diagram below.
 - **`docs/architecture/lfi-pipeline-v1.html`** — the v1 logical architecture diagram, phase-segregated to match `current_state.png`'s own phase names (Sending out the RFIs / Examination Phase Onsite / Pre-Exit Phase). Color encodes automation role, not just architecture layer — see the diagram's own legend and "How to read the colors" card: grey = human step or external system, teal = LLM agent (reasoning only), peach = LLM agent + tool call, gold = deterministic tool/rule-based service, violet = data store, blue = human-facing UI.
@@ -39,6 +40,15 @@ CLAUDE.md                       Project instructions for AI coding agents workin
 v1 scope: a lean, end-to-end pipeline (pre-examination intake and gap analysis, examination-meeting support, and post-examination findings/reporting) for banks only, at bare-minimum depth per phase. See `docs/adr/0002-v1-lean-end-to-end-scope.md` for the full scope rationale and what's explicitly deferred to v2. The deployment target (specific cloud/on-prem platform) is intentionally left open — see `docs/adr/0015-deployment-target-and-identity.md`.
 
 No build/implementation work has started. The next step is turning the settled design into an implementation plan against the documented architecture and agent specifications.
+
+## Document versioning
+
+`docs/PRD.md`, `docs/TDD.md`, `CONTEXT.md`, `docs/architecture/agent-specifications.md`, and `docs/architecture/tool-contracts.md` are **living documents** carrying a `Version` field (semver) and a `Changelog` table (PRD/TDD) or a baseline note (the other three), all currently at **1.0.0** as of 2026-09-19. When one of these changes:
+- **Patch** (1.0.x): wording, typo, cross-reference fixes — no decision content changes.
+- **Minor** (1.x.0): new decisions/ADRs folded in, sections added, scope clarified without reversing anything already shipped.
+- **Major** (x.0.0): a scope reversal or fundamental redesign (the kind of change that would itself need a new ADR).
+
+Bump the `Version` field and add a row to the `Changelog` table (PRD/TDD) in the same commit as the content change. `docs/adr/` (immutable, numbered, never edited) and `docs/decision-log.md` (append-only) are **not** versioned this way — their own numbering already serves that purpose.
 
 ## Regenerating a diagram
 

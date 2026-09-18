@@ -1,5 +1,7 @@
 # Tool contracts
 
+**Version 1.0.0** (baselined 2026-09-19 — reflects decisions 1–117 / ADR-0001–0032; prior revision history lives in `docs/decision-log.md`, not tracked as versions before this baseline).
+
 Every tool named in `agent-specifications.md` gets a real contract here: input schema, output schema (including a distinct error/timeout shape from "no result found"), timeout, and retry policy. This is the fix for the independent review's High Finding #6 — "tool contracts are prose, not contracts." Read `docs/adr/0018-failure-retry-idempotency-semantics.md` first for the cross-cutting policies these contracts all implement.
 
 **The one rule that applies to every tool below:** a timeout or connection error is a distinct outcome from "no matching result," represented by a distinct `status` value (`"error"`, never folded into `"ok"` with an empty payload). This matters most for `notice_corpus.get_clause` under the citation-grounding rule (ADR-0004) and `edm.query` under the quantitative-analysis guardrail (ADR-0021): treating a timeout as "no data exists" produces a wrong, confidently-stated verdict instead of a correct one that was merely delayed and should be retried.

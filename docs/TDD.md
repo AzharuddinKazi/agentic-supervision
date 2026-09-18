@@ -2,10 +2,19 @@
 
 | | |
 |---|---|
+| **Version** | 1.1.0 |
 | **Status** | Design complete, pre-implementation |
 | **Last updated** | 2026-09-19 |
 | **Companion doc** | `docs/PRD.md` (what and why, for a product/business reader) |
 | **Reviewed by** | 4 independent architecture reviews (2026-09-15, 2026-09-17 x2, 2026-09-18) — `docs/reviews/` |
+| **Approved by** | Not yet — no FPSD leadership/document-owner sign-off has been recorded against this design |
+
+## Changelog
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0.0 | 2026-09-19 | Initial version, consolidating decisions 1–117 / ADR-0001–0032 |
+| 1.1.0 | 2026-09-19 | Rewrote §8 Rollout to separate build order from a real launch plan (shadow mode, pilot, go/no-go gate, rollback trigger distinct from ADR-0023's model-swap canary); added an unfilled "Approved by" field. Per independent audit, `.scratch/prd-tdd-audit-2026-09-19.md` (not committed). |
 
 This is the engineering-facing counterpart to `docs/PRD.md`. It describes the system as currently designed: components, data flow, contracts, and the cross-cutting concerns a reviewer would expect in a Google-style design doc. No code exists yet — this describes the target, distilled from `docs/decision-log.md` (117 decisions) and `docs/adr/0001`–`0032`. Treat those two as the source of truth if anything here goes stale; this document summarizes, it doesn't supersede.
 
@@ -172,7 +181,9 @@ v1 targets English-language notices, RFI documents, and meeting minutes only —
 
 ## 8. Rollout
 
-No implementation has started. Recommended sequencing based on dependency order already implicit in the design:
+No implementation has started. This section has two parts: the **build order** (dependency-driven, what to write first) and the **launch plan** (how a built system actually goes live on real examinations) — a Google reviewer would expect both, and the build order alone is not a rollout plan.
+
+### 8.1 Build order
 
 1. Ingestion Adapter + Notice Corpus Manager (OCR/segmentation) + Fraud Database schema — nothing else can be built or tested against real data without these.
 2. Intake Tracker (rule-based, no LLM dependency — lowest-risk first agent to ship).
@@ -181,7 +192,17 @@ No implementation has started. Recommended sequencing based on dependency order 
 5. Examiner Dashboard, screen by screen, following the tab order already fixed by decision 88.
 6. Observability/Langfuse wiring alongside agent work, not bolted on after (ADR-0016 assumes it exists from day one for the human-agreement-rate metric to mean anything).
 
-A canary/rollback plan for model swaps (ADR-0023) should exist before the first production model is chosen, not after.
+### 8.2 Launch plan
+
+- **Shadow mode first**: run the pipeline in parallel on 1–2 real, already-underway examinations without surfacing any agent output to the Lead/Approver as actionable — compare agent output against what the examiner team produced manually, offline. Purpose: get a real citation-validity and human-agreement-rate baseline before any examiner workflow depends on it.
+- **Pilot phase**: a small number of full examinations (exact count TBD with FPSD — not yet decided, add to §9) run live through the pipeline with a Lead/Approver sign-off at every checkpoint as designed, but with an explicit fallback to the fully-manual process available at any point if the pipeline blocks progress.
+- **Go/no-go gate out of the pilot**, tracked against concrete, code-checkable signals rather than a subjective call:
+  - Zero verified instances of a compliance verdict citing a clause that doesn't exist or doesn't say what was cited (a hard gate — ADR-0004 is non-negotiable).
+  - Human-agreement rate in a sane band, not near 0% (system is useless) or near 100% (automation-bias risk, ADR-0016) — exact band TBD from pilot data.
+  - No `chain_integrity_violation` audit-log alarms unexplained by a known incident.
+  - No SLA breach caused by a pipeline defect (as opposed to normal workload) going undetected until an examiner manually noticed.
+- **Rollback trigger**: any Critical-severity defect found live (e.g., a fabricated citation reaching a human as if grounded, or a guardrail-bypassing state transition) halts new examinations from entering the pipeline and reverts in-flight examinations to manual handling for the affected step, without touching already-completed, signed-off findings. This is distinct from and in addition to ADR-0023's narrower canary/rollback process for *model swaps specifically* — that one assumes the pipeline itself is already trusted and is pinning in-flight examinations to a model version; this one covers the pipeline being wrong in the first place.
+- **Full rollout**: only after the pilot's go/no-go gate passes and FPSD leadership records sign-off (see the **Approved by** field at the top of this document, and of `docs/PRD.md` — neither is yet filled in).
 
 ## 9. Open questions
 

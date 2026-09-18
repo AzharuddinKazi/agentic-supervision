@@ -10,7 +10,9 @@ This is the durable, committed record of every question raised and decision made
 - `.scratch/lfi-examination-pipeline/design-grill.md` — the original raw working log this document is distilled from (gitignored, not part of the shipped repo — this file is now the canonical, committed copy going forward).
 - This file — the full narrative: every question, every round, every decision, in order, cross-referenced to ADRs.
 
-Decisions are numbered sequentially (1–80) and never renumbered; a decision that's later reversed or amended says so explicitly and points at the decision that changed it, rather than being edited away.
+Decisions are numbered sequentially (1–117 as of Round 18, 2026-09-17) and never renumbered; a decision that's later reversed or amended says so explicitly and points at the decision that changed it, rather than being edited away.
+
+**Coverage gap, flagged 2026-09-19**: fixes from the 2026-09-17 and 2026-09-18 Principal Engineer audits (`docs/reviews/`) — including the Pre-AG Sign-off HITL checkpoint, several state-schema field corrections, and multiple diagram/schema fixes — were applied directly to `agent-specifications.md`/`tool-contracts.md`/ADRs 0030–0032 without a corresponding decision-log round. `docs/reviews/` should be treated as a second source-of-truth tier alongside this file until a Round 19 backfills them here.
 
 ---
 

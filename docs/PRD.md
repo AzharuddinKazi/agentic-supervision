@@ -2,11 +2,20 @@
 
 | | |
 |---|---|
+| **Version** | 1.1.0 |
 | **Status** | Pre-implementation (design complete, no code written) |
 | **Author** | FPSD (CBUAE) design process, captured by agent-assisted design sessions |
 | **Last updated** | 2026-09-19 |
 | **Reviewers** | Independent architecture reviews: 2026-09-15, 2026-09-17 (x2), 2026-09-18 — see `docs/reviews/` |
 | **Source of truth for decisions** | `docs/decision-log.md` (117 decisions, 18 rounds) and `docs/adr/0001`–`0032` |
+| **Approved by** | Not yet — no FPSD leadership/document-owner sign-off has been recorded against this design |
+
+## Changelog
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0.0 | 2026-09-19 | Initial version, consolidating decisions 1–117 / ADR-0001–0032 |
+| 1.1.0 | 2026-09-19 | Fixed HITL checkpoint list (§8) to match the canonical 9-row table in `agent-specifications.md` — added the missing Gap-analysis review, Pre-AG Sign-off, AG review loop, and Pre-exit concerns loop checkpoints; added `docs/reviews/` as a second source-of-truth tier (§13); added baseline/pilot/owner open items (§11); flagged missing current-state baseline (§9). Per independent audit, `.scratch/prd-tdd-audit-2026-09-19.md` (not committed). |
 
 This document exists because the design process (18 rounds of decisions, 32 ADRs, 3 independent architecture reviews) has outgrown any single conversation. If you are reorienting on "what are we actually building," start here. For *why* a specific call was made, follow the cross-references into `docs/decision-log.md`.
 
@@ -55,7 +64,7 @@ Three roles, distinguished by **what actions they can take**, not by separate UI
 | Role | Can do |
 |---|---|
 | **Examiner** | Drafts and works the flow: reviews gap-analysis output, drafts supervision questions, records meeting minutes, drafts findings. |
-| **Lead / Approver** | Everything an Examiner can do, plus signs off at every HITL checkpoint (supervision questions, further-submission requests, findings/severity, AG feedback, rubric edits, Notice Corpus edits, examination setup). |
+| **Lead / Approver** | Everything an Examiner can do, plus signs off at every HITL checkpoint (§8) and performs the Lead/Approver-only admin actions that aren't `interrupt()` checkpoints in their own right: editing the severity rubric, editing the Notice Corpus, and correcting examination setup fields after creation. |
 | **Auditor / Compliance Reviewer** | Read-only. Sees the same full detail as the other two roles, but scoped portfolio-wide across all examinations rather than one at a time — this is their landing page (decision 106, ADR-0024). |
 
 Identity federates to CBUAE's existing SSO (Azure AD / on-prem AD via OIDC/SAML) — roles are authorization claims on federated identity, not a new user store (decision 46; the specific IdP is an open item, decision 112).
@@ -95,6 +104,7 @@ Identity federates to CBUAE's existing SSO (Azure AD / on-prem AD via OIDC/SAML)
 - Findings are drafted along two parallel, never-reconciled tracks: qualitative (notice/clause compliance narrative) and quantitative (EDM figures analyzed on their own terms) (ADR-0011).
 - Findings are signed off **per-finding**, tracks shown in visually separate sections (decision 101).
 - Severity/deadline comes from a shared, versioned rubric service; a redraft re-evaluates against the *current* rubric version, with any drift surfaced explicitly rather than silently applied (ADR-0020).
+- The drafted transmittal letter/pre-exit deck itself passes a **Pre-AG sign-off** checkpoint before `ag_status` can advance to `awaiting_ag` — this is ADR-0003's checkpoint (c) ("before anything goes to the Assistant Governor"), one of the three foundational human-authority gates in the whole design (§8, checkpoint 6).
 - Transmittal letter and pre-exit deck are template-filled from signed-off findings data and stay **download-only** in v1 — no in-browser rendering (decision 102, deferred to v2).
 - AG status is a dropdown plus required free-text on `changes_requested`; the raw text and the system's AI-generated summary are shown **side-by-side**, with only the summary editable — this is the fix for a Critical finding where AG feedback could otherwise steer a redraft on the system's interpretation alone, unseen (decision 56, 104).
 - The Phase-3 revision loop ("LFI has concerns → update letter/deck → re-check → proceed to exit") is **routine pipeline state**, not a rare edge case (ADR-0010) — it reuses the same Findings tab redraft/sign-off flow; there is no separate "Exit Deck" tab (decision 105).
@@ -110,21 +120,25 @@ Identity federates to CBUAE's existing SSO (Azure AD / on-prem AD via OIDC/SAML)
 
 ## 8. HITL (human-in-the-loop) checkpoints
 
-Every consequential agent output stops at a human checkpoint before it becomes binding. Full table with resolving roles lives in `docs/architecture/agent-specifications.md`; the checkpoints are:
+Every consequential agent output stops at a human checkpoint (a LangGraph `interrupt()`, decision 35) before it becomes binding. This is the canonical list — 9 checkpoints, matching `docs/architecture/agent-specifications.md`'s "HITL checkpoints" table exactly; do not maintain a second, shorter version of this list elsewhere:
 
-1. Supervision-question sign-off (per-question) — Lead/Approver
-2. Further-submission review (per-item) — Lead/Approver — **new in Round 18, no prior checkpoint existed for this artifact**
-3. Sufficiency check (further-submission → findings) — human-judged gate
-4. Findings/severity sign-off (per-finding) — Lead/Approver
-5. AG Feedback Review (raw vs. AI summary, summary editable) — Lead/Approver
-6. Rubric edits — Lead/Approver
-7. Notice Corpus edits (post-OCR/segmentation) — Lead/Approver
+1. **Gap-analysis review** — Compliance Analyst raises, Lead/Approver resolves — `insufficient_grounding`/`needs_human_review` items before supervision questions are finalized.
+2. **Supervision-question sign-off** (per-question) — Meeting Facilitator raises, Lead/Approver resolves — final question list before the live meeting.
+3. **Further-submission review** (per-item) — Meeting Facilitator raises, Lead/Approver resolves — `further_submission_requests[]` before the list is relayed to the LFI. **New in Round 18 (decision 99); no prior checkpoint existed for this artifact.**
+4. **Sufficiency check** — Meeting Facilitator raises, Lead/Approver resolves — whether further-submission responses actually close the meeting's gaps. **Added to close a Critical finding from the first independent review (decision 57).**
+5. **Findings/severity sign-off** (per-finding) — Findings Author raises, Lead/Approver resolves — findings + severity before transmittal-letter drafting.
+6. **Pre-AG sign-off** — Findings Author raises, Lead/Approver resolves — the drafted transmittal letter/pre-exit deck itself, before `ag_status` advances to `awaiting_ag`. **This is the literal implementation of ADR-0003's checkpoint (c) — "before anything goes to the Assistant Governor" — added to close a finding from the 2026-09-17 Principal Engineer review; treat it as one of the three foundational sign-off gates the whole augmentation-not-autonomy design rests on, not an optional add-on.**
+7. **AG review loop** — Approval Coordinator raises, the Assistant Governor decides (outcome relayed by Lead/Approver) — transmittal letter + pre-exit deck; no pipeline-enforced SLA, this is an external process.
+8. **AG Feedback Review** — Approval Coordinator raises, Lead/Approver resolves — the raw AG feedback shown side-by-side with the AI-generated summary, before the summary can trigger a redraft. **Added to close a Critical finding from the first independent review (decision 56).**
+9. **Pre-exit concerns loop** — Approval Coordinator raises, Lead/Approver resolves — updated letter/deck after the LFI raises concerns at pre-exit (ADR-0010).
+
+Suggested SLAs per checkpoint are in `agent-specifications.md`; several (further-submission review, gap-analysis review) are explicitly "tune empirically," not final numbers — see §11.
 
 Primary trust metric: **human-agreement rate** (how often a Lead/Approver accepts a draft unedited) — not raw accuracy. A rate near 100% is treated as an automation-bias warning sign, not a win (ADR-0016).
 
 ## 9. Success metrics
 
-No production usage data exists yet, so these are directional, to be sharpened once real examinations run through the system:
+No production usage data exists yet, so these are directional, to be sharpened once real examinations run through the system. **No current-state baseline has been measured** (examiner hours per examination, current gap-analysis error rate, etc.) — without one, "reduction" below can't be quantified after the fact either. Establishing this baseline (e.g., timing 2–3 upcoming manual examinations before the pilot in §"Rollout" of `docs/TDD.md` starts) is itself an open item, not assumed to exist.
 
 - Reduction in examiner hours spent on manual intake tracking and first-pass clause review, per examination.
 - Human-agreement rate per HITL checkpoint, tracked over time and by LFI (a sustained near-100% rate, or an anomaly correlated with a specific LFI's documents, are both explicit investigation triggers — ADR-0016, ADR-0030).
@@ -150,6 +164,9 @@ These are tracked in full in `docs/decision-log.md` §"Open items"; the headline
 - Sanctions/watchlist screening tool contract — scoped as a direction (ADR-0028), not yet specified.
 - Notice Corpus management screen's tool contract — scoped as a direction (decision 108), not yet specified.
 - Whether any in-scope content is Arabic/bilingual (ADR-0031) — blocks nothing yet, but blocks Notice Corpus ingestion once that starts in earnest.
+- Pilot size (how many examinations run shadow-mode / live-pilot before the go/no-go decision) and the human-agreement-rate band that counts as "healthy" for that gate — see `docs/TDD.md` §8.2. Not yet decided.
+- A current-state manual-effort baseline (examiner hours, error rate) to measure v1's actual impact against — not yet measured (§9).
+- A named document owner/approver for this PRD and the TDD — neither has a recorded sign-off yet (see the **Approved by** field at the top of each).
 
 ## 12. Explicit v2+ candidates (deferred, not dropped)
 
@@ -167,11 +184,11 @@ These are tracked in full in `docs/decision-log.md` §"Open items"; the headline
 
 | Question | Where to look |
 |---|---|
-| "Has X already been decided?" | `docs/decision-log.md` — check before reopening anything |
+| "Has X already been decided?" | `docs/decision-log.md` first, **and `docs/reviews/` second** — several 2026-09-17/18 Principal Engineer audit fixes (e.g. the Pre-AG Sign-off checkpoint) landed directly in `agent-specifications.md`/ADRs without a decision-log round yet; see the coverage-gap note at the top of `docs/decision-log.md` |
 | "Why was X decided this way?" | `docs/decision-log.md`, cross-referenced to the ADR |
 | Terminology / glossary | `CONTEXT.md` |
-| Per-agent contract (inputs/outputs/guardrails/definition-of-done) | `docs/architecture/agent-specifications.md` |
+| Per-agent contract (inputs/outputs/guardrails/definition-of-done) | `docs/architecture/agent-specifications.md` — canonical for the HITL checkpoint table (§8 here summarizes it, doesn't replace it) |
 | Per-tool contract (schema/timeout/retry) | `docs/architecture/tool-contracts.md` |
 | Diagrams (architecture, workflow, sequence) | `docs/architecture/`, browsable gallery at `docs/index.html` |
-| Independent review findings | `docs/reviews/` |
+| Independent review findings not yet folded into decision-log.md | `docs/reviews/` |
 | Technical design detail | `docs/TDD.md` |
