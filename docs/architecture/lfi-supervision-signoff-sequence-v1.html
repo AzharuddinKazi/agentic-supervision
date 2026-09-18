@@ -5580,6 +5580,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <ul>
           <li>&bull; This is the pre-meeting checkpoint, distinct from the post-meeting Further-Submission Review (decision 99, lfi-further-submission-review-sequence-v1.html) — the two cover different artifacts at different points in the flow</li>
           <li>&bull; The citation-grounding source of these questions is drawn in lfi-guardrail-citation-grounding-v1.html, not repeated here. Every write here routes through log_checkpoint(), same single write path as every other checkpoint</li>
+          <li>&bull; Tool-call retry/timeout branches aren&#39;t drawn here — every call in this diagram is a UI/human-gated action, not a tool call with its own retry policy; interrupt()&#39;s concurrent-resolution guard (ADR-0018 §3) is drawn once, in lfi-gap-analysis-resolution-sequence-v1.html, rather than repeated on every checkpoint diagram</li>
         </ul>
       </div>
     </div>

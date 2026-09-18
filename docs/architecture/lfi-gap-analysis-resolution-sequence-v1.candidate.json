@@ -5,13 +5,14 @@
     "title": "Gap Analysis Resolution — Two-Option Call Sequence",
     "quality_profile": "showcase",
     "column_fit": "spread",
-    "viewBox": [1050, 900],
+    "viewBox": [1050, 1030],
     "legend": {
       "mode": "all",
       "entries": {
         "default": { "label": "UI action" },
         "emphasis": { "label": "Resolution write" },
         "security": { "label": "Gated human action" },
+        "dashed": { "label": "Rejected — stale etag / conflict" },
         "return": { "label": "Response" }
       }
     }
@@ -27,31 +28,38 @@
     { "from": 150, "to": 256, "label": "Item flagged" },
     { "from": 272, "to": 444, "label": "Option A — accept as insufficient" },
     { "from": 460, "to": 632, "label": "Option B — human-asserted verdict" },
-    { "from": 648, "to": 720, "label": "Auto-inferred completion (decision 96)" }
+    { "from": 648, "to": 720, "label": "Auto-inferred completion (decision 96)" },
+    { "from": 736, "to": 950, "label": "Concurrent resolution — rejected, not overwritten (ADR-0018 §3)" }
   ],
   "messages": [
     { "from": "compliance_analyst", "to": "examiner_app", "y": 180, "label": "flagged item: ungrounded / low-confidence", "variant": "default" },
-    { "from": "examiner_app", "to": "lead_approver", "y": 222, "label": "present resolution choice — 2 options only", "variant": "default" },
+    { "from": "examiner_app", "to": "lead_approver", "y": 222, "label": "present resolution choice — 2 options only", "variant": "default", "note": "interrupt() issues a resolution_etag for this checkpoint (ADR-0018 §3)" },
 
     { "from": "lead_approver", "to": "examiner_app", "y": 306, "label": "accept: insufficient", "variant": "security" },
-    { "from": "examiner_app", "to": "state_store", "y": 348, "label": "write compliance_verdicts[verdict: insufficient_grounding]", "variant": "emphasis" },
+    { "from": "examiner_app", "to": "state_store", "y": 348, "label": "write compliance_verdicts[verdict: insufficient_grounding, asserted_by: \"model\"]", "variant": "emphasis" },
     { "from": "examiner_app", "to": "state_store", "y": 390, "label": "append supervision_questions[] entry", "variant": "emphasis", "note": "→ Supervision Sign-off" },
-    { "from": "examiner_app", "to": "audit_trail", "y": 424, "label": "log_checkpoint(gap_analysis.accepted_insufficient)", "variant": "emphasis" },
+    { "from": "examiner_app", "to": "audit_trail", "y": 424, "label": "log_checkpoint(gap_analysis.accepted_insufficient, etag)", "variant": "emphasis" },
 
     { "from": "lead_approver", "to": "examiner_app", "y": 494, "label": "assert verdict + human-supplied citation", "variant": "security" },
     { "from": "examiner_app", "to": "state_store", "y": 536, "label": "write compliance_verdicts[asserted_by: \"human\"]", "variant": "emphasis", "note": "distinct from asserted_by: \"model\"" },
-    { "from": "examiner_app", "to": "audit_trail", "y": 578, "label": "log_checkpoint(gap_analysis.human_asserted)", "variant": "emphasis" },
+    { "from": "examiner_app", "to": "audit_trail", "y": 578, "label": "log_checkpoint(gap_analysis.human_asserted, etag)", "variant": "emphasis" },
 
     { "from": "examiner_app", "to": "state_store", "y": 664, "label": "check: every flagged item resolved + every question has a verdict?", "variant": "default" },
-    { "from": "state_store", "to": "examiner_app", "y": 706, "label": "analysis complete — inferred, no sign-off button", "variant": "return" }
+    { "from": "state_store", "to": "examiner_app", "y": 706, "label": "analysis complete — inferred, no sign-off button", "variant": "return" },
+
+    { "from": "lead_approver", "to": "examiner_app", "y": 770, "label": "duplicate resolution attempt — stale etag (double-submit from a slow UI)", "variant": "default" },
+    { "from": "examiner_app", "to": "state_store", "y": 812, "label": "resolve(checkpoint, resolution, etag: stale)", "variant": "default" },
+    { "from": "state_store", "to": "examiner_app", "y": 854, "label": "{status: error, reason: conflict — checkpoint already resolved}", "variant": "dashed", "note": "never silently overwritten, never double-applied" },
+    { "from": "examiner_app", "to": "lead_approver", "y": 896, "label": "reject — checkpoint already resolved, refresh view", "variant": "dashed" }
   ],
   "activations": [
-    { "participant": "examiner_app", "from": 170, "to": 716, "type": "frontend" },
+    { "participant": "examiner_app", "from": 170, "to": 906, "type": "frontend" },
     { "participant": "state_store", "from": 338, "to": 400, "type": "database" },
     { "participant": "audit_trail", "from": 414, "to": 434, "type": "database" },
     { "participant": "state_store", "from": 526, "to": 548, "type": "database" },
     { "participant": "audit_trail", "from": 568, "to": 588, "type": "database" },
-    { "participant": "state_store", "from": 654, "to": 716, "type": "database" }
+    { "participant": "state_store", "from": 654, "to": 716, "type": "database" },
+    { "participant": "state_store", "from": 802, "to": 864, "type": "database" }
   ],
   "cards": [
     {
@@ -60,6 +68,14 @@
       "items": [
         "A third option — targeted re-run of Compliance Analyst on a single flagged item — was dropped for v1: nothing in the LangGraph shape supports partial re-invocation from the UI",
         "\"Accept as insufficient\" appends a supervision_questions[] row; \"human-asserted verdict\" writes asserted_by: \"human\" so the audit trail never conflates a human call with a model call"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Concurrency guard (ADR-0018 §3) — the one mechanism common to every checkpoint",
+      "items": [
+        "Every interrupt() carries a version/etag; a second resolution attempt on an already-resolved checkpoint is rejected with an explicit conflict, never silently overwritten or double-applied — this diagram is the first to draw that protocol, chosen here since Gap Analysis's two-option shape makes a stale-etag double-submit easy to illustrate concretely",
+        "Same protocol applies to every other checkpoint's interrupt() resolution (Setup, Intake, Supervision Sign-off, Findings, AG Feedback, Further-Submission) — not redrawn on each of those diagrams to avoid repeating an identical four-message block"
       ]
     },
     {

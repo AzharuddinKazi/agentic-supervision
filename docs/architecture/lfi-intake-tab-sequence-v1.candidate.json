@@ -5,13 +5,14 @@
     "title": "Intake Tab — Auto Status + Override Call Sequence",
     "quality_profile": "showcase",
     "column_fit": "spread",
-    "viewBox": [1050, 900],
+    "viewBox": [1050, 960],
     "legend": {
       "mode": "all",
       "entries": {
         "default": { "label": "UI action / tool call" },
         "emphasis": { "label": "Status-changing write" },
         "security": { "label": "Gated human action" },
+        "dashed": { "label": "Transient failure / retry / terminal error" },
         "return": { "label": "Response" }
       }
     }
@@ -26,7 +27,8 @@
   "segments": [
     { "from": 150, "to": 298, "label": "Auto ingest + status check" },
     { "from": 314, "to": 444, "label": "False negative → manual override" },
-    { "from": 460, "to": 590, "label": "Confirmed malformed → resubmission" }
+    { "from": 460, "to": 590, "label": "Confirmed malformed → resubmission" },
+    { "from": 606, "to": 776, "label": "Adapter tool failure — retry vs. terminal (tool-contracts.md)" }
   ],
   "messages": [
     { "from": "lfi_sftp", "to": "ingestion_adapter", "y": 180, "label": "document appears at SFTP root", "variant": "default" },
@@ -39,13 +41,20 @@
 
     { "from": "intake_tracker", "to": "lead_approver", "y": 462, "label": "flagged: suspicious (confirmed malformed)", "variant": "default" },
     { "from": "lead_approver", "to": "intake_tracker", "y": 504, "label": "request resubmission", "variant": "security", "note": "true positive, not overridden" },
-    { "from": "intake_tracker", "to": "audit_trail", "y": 546, "label": "log_checkpoint(intake.resubmission_requested)", "variant": "emphasis", "note": "intake_status reverts to pending, fixes audit 2.11" }
+    { "from": "intake_tracker", "to": "audit_trail", "y": 546, "label": "log_checkpoint(intake.resubmission_requested)", "variant": "emphasis", "note": "intake_status reverts to pending, fixes audit 2.11" },
+
+    { "from": "ingestion_adapter", "to": "intake_tracker", "y": 628, "label": "list_documents(lfi_id) — attempt 1: adapter_unreachable (timeout)", "variant": "dashed" },
+    { "from": "ingestion_adapter", "to": "intake_tracker", "y": 670, "label": "retry with backoff — attempts 2–4 (1s/2s/4s, exponential)", "variant": "dashed" },
+    { "from": "ingestion_adapter", "to": "intake_tracker", "y": 712, "label": "{status: error, reason: auth_failed | invalid_lfi_id}", "variant": "dashed", "note": "terminal, no retry — escalate to human review of the ingestion configuration, distinct from a transient adapter_unreachable" },
+    { "from": "intake_tracker", "to": "lead_approver", "y": 754, "label": "surface as ingestion-configuration issue (not a document-level flag)", "variant": "default" }
   ],
   "activations": [
     { "participant": "ingestion_adapter", "from": 170, "to": 274, "type": "cloud" },
     { "participant": "intake_tracker", "from": 212, "to": 556, "type": "backend" },
     { "participant": "audit_trail", "from": 390, "to": 410, "type": "database" },
-    { "participant": "audit_trail", "from": 536, "to": 556, "type": "database" }
+    { "participant": "audit_trail", "from": 536, "to": 556, "type": "database" },
+    { "participant": "ingestion_adapter", "from": 618, "to": 722, "type": "cloud" },
+    { "participant": "intake_tracker", "from": 618, "to": 764, "type": "backend" }
   ],
   "cards": [
     {
@@ -61,7 +70,8 @@
       "title": "Diagram scope",
       "items": [
         "Covers the call sequence behind lfi-intake-tab-v1.html's lane/phase view; document open/download via the Ingestion Adapter (decision 94, no custom viewer) isn't a call worth its own message here",
-        "The Ingestion Adapter's own poll/fetch/SFTP cycle is drawn in lfi-pipeline-v1.html, not repeated here. Every write here routes through log_checkpoint() (tool-contracts.md), same single write path as every other checkpoint"
+        "The Ingestion Adapter's own poll/fetch/SFTP cycle is drawn in lfi-pipeline-v1.html, not repeated here. Every write here routes through log_checkpoint() (tool-contracts.md), same single write path as every other checkpoint",
+        "The adapter's retry/terminal-failure split is drawn in full here (not just referenced) since this is the SFTP-facing boundary with the system's largest external-content surface — the other new sequence diagrams defer to tool-contracts.md by reference instead, since their calls are UI-gated human actions without a comparable retry policy of their own"
       ]
     }
   ]

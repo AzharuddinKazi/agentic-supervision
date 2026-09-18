@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "LFI Examination Pipeline — v1 Deployment Architecture",
+    "title": "LFI Examination Pipeline \u2014 v1 Deployment Architecture",
     "quality_profile": "showcase",
     "engineering_profile": "deployment-ownership",
     "legend": {
@@ -15,7 +15,7 @@
           "label": "Human-facing UI (software)"
         },
         "backend": {
-          "label": "LLM Agent — reasoning only"
+          "label": "LLM Agent \u2014 reasoning only"
         },
         "messagebus": {
           "label": "LLM Agent + Tool Call"
@@ -51,7 +51,7 @@
       "id": "lfi_workspace",
       "type": "external",
       "label": "Shared Workspace",
-      "sublabel": "delisted → Smart Portal",
+      "sublabel": "delisted \u2192 Smart Portal",
       "pos": [
         370,
         70
@@ -72,6 +72,21 @@
       ],
       "size": [
         120,
+        64
+      ]
+    },
+    {
+      "id": "ingestion_adapter",
+      "type": "cloud",
+      "label": "Ingestion Adapter",
+      "sublabel": "list / fetch / mtime",
+      "tag": "Backend Team \u00b7 SFTP (v1)",
+      "pos": [
+        370,
+        170
+      ],
+      "size": [
+        140,
         64
       ]
     },
@@ -110,7 +125,7 @@
       "type": "cloud",
       "label": "Intake Tracker",
       "sublabel": "Rule-based (not LLM)",
-      "tag": "presence · format check",
+      "tag": "presence \u00b7 format check",
       "pos": [
         370,
         270
@@ -140,7 +155,7 @@
       "type": "backend",
       "label": "Meeting Facilitator",
       "sublabel": "Clarification & Meeting",
-      "tag": "Qs + minutes → actions",
+      "tag": "Qs + minutes \u2192 actions",
       "pos": [
         700,
         270
@@ -155,7 +170,7 @@
       "type": "messagebus",
       "label": "Findings Author",
       "sublabel": "Findings & Reporting",
-      "tag": "qual + quant → letter + deck",
+      "tag": "qual + quant \u2192 letter + deck",
       "pos": [
         880,
         270
@@ -167,10 +182,10 @@
     },
     {
       "id": "ag_preexit",
-      "type": "cloud",
+      "type": "messagebus",
       "label": "Approval Coordinator",
       "sublabel": "AG & Pre-Exit",
-      "tag": "showcase → revise loop",
+      "tag": "summarize_feedback(), ADR-0017",
       "pos": [
         1060,
         270
@@ -254,6 +269,36 @@
         140,
         64
       ]
+    },
+    {
+      "id": "notice_corpus_mgr",
+      "type": "messagebus",
+      "label": "Notice Corpus Manager",
+      "sublabel": "upload \u2192 OCR \u2192 confirm",
+      "tag": "Backend Team \u00b7 UI-triggered",
+      "pos": [
+        20,
+        650
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "platform_tools",
+      "type": "cloud",
+      "label": "Shared Platform Tools",
+      "sublabel": "rubric/quant/fill",
+      "tag": "Backend Team",
+      "pos": [
+        700,
+        650
+      ],
+      "size": [
+        170,
+        64
+      ]
     }
   ],
   "boundaries": [
@@ -263,6 +308,7 @@
       "wraps": [
         "ingress",
         "examiner_app",
+        "ingestion_adapter",
         "intake_tracker",
         "gap_analysis",
         "clarification_agent",
@@ -272,7 +318,9 @@
         "oracle_db",
         "llm_eval",
         "observability",
-        "secrets_manager"
+        "secrets_manager",
+        "platform_tools",
+        "notice_corpus_mgr"
       ],
       "pad": 16
     },
@@ -359,7 +407,7 @@
       "id": "agpreexit-to-observability",
       "from": "ag_preexit",
       "to": "observability",
-      "label": "OTel traces/metrics/logs",
+      "label": "OTel traces/metrics/logs (representative)",
       "fromSide": "bottom",
       "toSide": "top",
       "labelDy": 24
@@ -371,7 +419,10 @@
       "label": "OIDC login redirect",
       "fromSide": "bottom",
       "toSide": "top",
-      "labelDy": 24
+      "labelAt": [
+        95,
+        145
+      ]
     },
     {
       "id": "ingress-to-app",
@@ -388,10 +439,19 @@
       "labelDy": 56
     },
     {
-      "id": "workspace-to-intake",
+      "id": "workspace-to-adapter",
       "from": "lfi_workspace",
-      "to": "intake_tracker",
+      "to": "ingestion_adapter",
       "label": "SFTP",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "adapter-to-intake",
+      "from": "ingestion_adapter",
+      "to": "intake_tracker",
+      "label": "ingested documents",
       "fromSide": "bottom",
       "toSide": "top",
       "labelDy": 24
@@ -436,21 +496,77 @@
       "id": "clarification-to-llm",
       "from": "clarification_agent",
       "to": "llm_inference",
-      "label": "gRPC inference (in-tenant)",
+      "label": "gRPC inference, mTLS (representative \u2014 all 4 agents)",
       "labelDy": 24
     },
     {
       "id": "findings-to-db",
       "from": "findings_reporting",
       "to": "oracle_db",
-      "label": "Oracle Net (TLS)",
-      "labelDy": 24
+      "label": "Oracle Net, TLS (representative \u2014 every agent persists)",
+      "labelAt": [
+        700,
+        478
+      ]
+    },
+    {
+      "id": "findings-to-platformtools",
+      "from": "findings_reporting",
+      "to": "platform_tools",
+      "label": "rubric.lookup(), quant.compute(), template_fill()",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          955,
+          360
+        ],
+        [
+          1045,
+          360
+        ],
+        [
+          1045,
+          616
+        ],
+        [
+          785,
+          616
+        ]
+      ],
+      "labelAt": [
+        1045,
+        490
+      ]
+    },
+    {
+      "id": "app-to-noticemgr",
+      "from": "examiner_app",
+      "to": "notice_corpus_mgr",
+      "label": "Settings/Admin: upload notice",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          270,
+          616
+        ],
+        [
+          95,
+          616
+        ]
+      ],
+      "labelAt": [
+        180,
+        604
+      ]
     },
     {
       "id": "secrets-to-intake",
       "from": "secrets_manager",
       "to": "intake_tracker",
-      "label": "SFTP creds (+ DB/mTLS — not drawn)",
+      "label": "SFTP creds (+ DB/mTLS \u2014 not drawn)",
       "variant": "dashed",
       "fromSide": "top",
       "toSide": "bottom",
@@ -485,16 +601,26 @@
       "dot": "cyan",
       "title": "4 LLM agents + 1 rule-based service",
       "items": [
-        "One LangGraph runtime — Intake Tracker is rule-based, not LLM",
+        "One LangGraph runtime \u2014 Intake Tracker is rule-based, not LLM",
         "Persona on each box, guardrail on hover. Full detail: agent-specifications.md",
-        "Color key matches lfi-pipeline-v1's automation-role legend (teal=LLM-only, peach=LLM+tool, gold=deterministic); security/gold-adjacent here also covers platform infra (LLM Inference, Secrets Manager, Observability, Tracing & Eval) that isn't itself an agent"
+        "Color key matches lfi-pipeline-v1's automation-role legend (teal=LLM-only, peach=LLM+tool, gold=deterministic); security/gold-adjacent here also covers platform infra (LLM Inference, Secrets Manager, Observability, Tracing & Eval) that isn't itself an agent",
+        "Approval Coordinator is peach/messagebus, not gold/cloud (fixes Principal Engineer audit 1.5) \u2014 its guarded summarize_feedback() LLM call (ADR-0017) is real tool-calling LLM usage, same as Findings Author and Compliance Analyst"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Platform services (tool-contracts.md) now shown (fixes Principal Engineer audit 1.1/1.2/1.3)",
+      "items": [
+        "Ingestion Adapter sits between Shared Workspace and Intake Tracker \u2014 the load-bearing boundary ADR-0006 calls out for the eventual Smart Portal swap; SFTP never reaches Intake Tracker directly",
+        "Severity Rubric Service, quant_analysis.compute(), and template_fill() are shared, versioned/deterministic services Findings Author calls (and quant_analysis.compute() Compliance Analyst also calls for context) \u2014 not agents themselves, hence gold/cloud, not peach",
+        "Notice Corpus Manager is in-app v1 scope (ADR-0029) \u2014 shown peach/messagebus since it uses an LLM/OCR step, but per agent-specifications.md it has no persona or ongoing state; it's a UI-triggered workflow, not a persistent LangGraph agent like the 4 above it"
       ]
     },
     {
       "dot": "rose",
       "title": "Threat model (ADR-0019)",
       "items": [
-        "LLM Inference Service isolated in its own security zone — only the 4 LLM agents may call it, over mTLS",
+        "LLM Inference Service isolated in its own security zone \u2014 only the 4 LLM agents may call it, over mTLS",
         "Secrets Manager holds SFTP/DB/mTLS creds; Fraud DB encrypted at rest"
       ]
     },
@@ -502,7 +628,7 @@
       "dot": "violet",
       "title": "HITL checkpoints (ADR-0016)",
       "items": [
-        "HITL checkpoints with SLAs — full current table in agent-specifications.md; count not restated here since it grows as new checkpoints are added (fixes Principal Engineer audit 4.3, which found this card stale after ADR-0029)",
+        "HITL checkpoints with SLAs \u2014 full current table in agent-specifications.md; count not restated here since it grows as new checkpoints are added (fixes Principal Engineer audit 4.3, which found this card stale after ADR-0029)",
         "Primary trust metric: human-agreement rate. Near-100% = automation-bias risk, not a win"
       ]
     },

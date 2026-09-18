@@ -5,12 +5,13 @@
     "title": "Audit Log — Write Path + Reach-Gated Read Call Sequence (decision 106)",
     "quality_profile": "showcase",
     "column_fit": "spread",
-    "viewBox": [1050, 900],
+    "viewBox": [1050, 920],
     "legend": {
       "mode": "all",
       "entries": {
         "default": { "label": "UI action / tool call" },
         "emphasis": { "label": "Append-only write" },
+        "dashed": { "label": "Correctness alarm — halt, never retry" },
         "return": { "label": "Response" }
       }
     }
@@ -23,26 +24,30 @@
     { "id": "auditor", "type": "external", "label": "Auditor", "sublabel": "portfolio-wide landing page" }
   ],
   "segments": [
-    { "from": 150, "to": 340, "label": "Write path — every checkpoint event" },
-    { "from": 356, "to": 486, "label": "Within-exam read (Examiner, Lead/Approver)" },
-    { "from": 502, "to": 632, "label": "Portfolio-wide read (Auditor)" }
+    { "from": 150, "to": 286, "label": "Write path — happy path" },
+    { "from": 296, "to": 366, "label": "Write path — chain_integrity_violation (halts, never retries)" },
+    { "from": 380, "to": 490, "label": "Within-exam read (Examiner, Lead/Approver)" },
+    { "from": 506, "to": 616, "label": "Portfolio-wide read (Auditor)" }
   ],
   "messages": [
     { "from": "any_agent", "to": "log_checkpoint", "y": 180, "label": "log_checkpoint(state_before, state_after, actor, event_type)", "variant": "default" },
     { "from": "log_checkpoint", "to": "audit_trail", "y": 222, "label": "derive idempotency_key, prev_hash, entry_hash — write", "variant": "emphasis" },
-    { "from": "audit_trail", "to": "log_checkpoint", "y": 264, "label": "{ status: ok, entry_id, entry_hash }", "variant": "return", "note": "chain_integrity_violation halts + pages, never silently retries" },
+    { "from": "audit_trail", "to": "log_checkpoint", "y": 264, "label": "{ status: ok, entry_id, entry_hash }", "variant": "return" },
 
-    { "from": "examiner_lead", "to": "audit_trail", "y": 396, "label": "read log — scoped to assigned examination only", "variant": "default" },
-    { "from": "audit_trail", "to": "examiner_lead", "y": 438, "label": "full detail, within-exam only", "variant": "return" },
+    { "from": "audit_trail", "to": "log_checkpoint", "y": 306, "label": "{ status: error, reason: chain_integrity_violation }", "variant": "dashed", "note": "computed prev_hash doesn't match the chain's current tail — concurrent unserialized writes or tampering, not a transient error" },
+    { "from": "log_checkpoint", "to": "any_agent", "y": 348, "label": "halt & page — never silently retried past this", "variant": "dashed" },
 
-    { "from": "auditor", "to": "audit_trail", "y": 542, "label": "read log — cross-examination, portfolio landing page", "variant": "default" },
-    { "from": "audit_trail", "to": "auditor", "y": 584, "label": "same full detail, no redaction", "variant": "return", "note": "reach differs by role, content never does — voided examinations stay queryable (ADR-0024 §4)" }
+    { "from": "examiner_lead", "to": "audit_trail", "y": 432, "label": "read log — scoped to assigned examination only", "variant": "default" },
+    { "from": "audit_trail", "to": "examiner_lead", "y": 474, "label": "full detail, within-exam only", "variant": "return" },
+
+    { "from": "auditor", "to": "audit_trail", "y": 558, "label": "read log — cross-examination, portfolio landing page", "variant": "default" },
+    { "from": "audit_trail", "to": "auditor", "y": 600, "label": "same full detail, no redaction", "variant": "return", "note": "reach differs by role, content never does — voided examinations stay queryable (ADR-0024 §4)" }
   ],
   "activations": [
-    { "participant": "log_checkpoint", "from": 170, "to": 274, "type": "cloud" },
-    { "participant": "audit_trail", "from": 212, "to": 274, "type": "database" },
-    { "participant": "audit_trail", "from": 386, "to": 448, "type": "database" },
-    { "participant": "audit_trail", "from": 532, "to": 594, "type": "database" }
+    { "participant": "log_checkpoint", "from": 170, "to": 358, "type": "cloud" },
+    { "participant": "audit_trail", "from": 212, "to": 316, "type": "database" },
+    { "participant": "audit_trail", "from": 422, "to": 484, "type": "database" },
+    { "participant": "audit_trail", "from": 548, "to": 610, "type": "database" }
   ],
   "cards": [
     {
@@ -58,7 +63,7 @@
       "title": "Diagram scope",
       "items": [
         "log_checkpoint() is the single write path into audit_log[] for every agent, at every interrupt() resolution and state transition (tool-contracts.md) — no agent writes an AuditLogEntry any other way",
-        "Hash-chain integrity checking and retry policy (2s timeout, 3 attempts, never retried on chain_integrity_violation) are the tool contract's job, not repeated in full here; schema/retention policy is ADR-0024, not this diagram"
+        "chain_integrity_violation (computed prev_hash doesn't match the chain's tail) is drawn explicitly above because it's the one failure mode in the whole system the contract says must stop everything, not just retry — the full timeout/backoff policy for ordinary transient DB errors (2s timeout, 3 attempts) is the tool contract's job, not repeated in full here; schema/retention policy is ADR-0024, not this diagram"
       ]
     }
   ]

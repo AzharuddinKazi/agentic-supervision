@@ -5339,16 +5339,19 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="fine" x="915" y="426" class="t-messagebus" font-size="7" text-anchor="middle">LLM + tool calls</text>
         </g>
 
-        <g id="node-ag_preexit" data-node-id="ag_preexit" data-node-label="Approval Coordinator" tabindex="0" role="button" aria-label="Focus Approval Coordinator, state tracker, Enterprise sandboxed environment (private cloud / on-prem) › Phase 3: Pre-Exit Phase" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="state tracker" data-node-tag="+ guarded LLM assist" data-node-context="Enterprise sandboxed environment (private cloud / on-prem) › Phase 3: Pre-Exit Phase">
-          <title>Approval Coordinator · state tracker · Enterprise sandboxed environment (private cloud / on-prem) › Phase 3: Pre-Exit Phase · + guarded LLM assist</title>
+        <g id="node-ag_preexit" data-node-id="ag_preexit" data-node-label="Approval Coordinator" tabindex="0" role="button" aria-label="Focus Approval Coordinator, state + guarded LLM, Enterprise sandboxed environment (private cloud / on-prem) › Phase 3: Pre-Exit Phase" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="state + guarded LLM" data-node-tag="summarize_feedback(), ADR-0017" data-node-context="Enterprise sandboxed environment (private cloud / on-prem) › Phase 3: Pre-Exit Phase">
+          <title>Approval Coordinator · state + guarded LLM · Enterprise sandboxed environment (private cloud / on-prem) › Phase 3: Pre-Exit Phase · summarize_feedback(), ADR-0017</title>
           <rect x="1014" y="370" width="140" height="64" rx="6" class="c-mask"/>
-          <rect x="1014" y="370" width="140" height="64" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(1020 376) scale(0.6875)">
-            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
+          <rect x="1014" y="370" width="140" height="64" rx="6" class="c-messagebus" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(1020 376) scale(0.6875)">
+            <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
+            <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
+            <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
+            <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="1084" y="400" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Approval Coordinator</text>
-        <text data-detail="context" x="1084" y="416" class="t-muted" font-size="9" text-anchor="middle">state tracker</text>
-        <text data-detail="fine" x="1084" y="426" class="t-cloud" font-size="7" text-anchor="middle">+ guarded LLM assist</text>
+        <text data-detail="context" x="1084" y="416" class="t-muted" font-size="9" text-anchor="middle">state + guarded LLM</text>
+        <text data-detail="fine" x="1084" y="426" class="t-messagebus" font-size="7" text-anchor="middle">summarize_feedback(), ADR-0017</text>
         </g>
 
         <g id="node-examiner_app" data-node-id="examiner_app" data-node-label="Examiner Dashboard" tabindex="0" role="button" aria-label="Focus Examiner Dashboard, Examiner + Lead/Approver roles, Enterprise sandboxed environment (private cloud / on-prem)" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Examiner + Lead/Approver roles" data-node-context="Enterprise sandboxed environment (private cloud / on-prem)">
@@ -5714,6 +5717,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>&bull; In-Person Deep Dive&#39;s minutes feed Meeting Facilitator&#39;s post-meeting extraction (edge not drawn — crosses the data-source row; see agent-specifications.md)</li>
           <li>&bull; Notice Corpus Manager is peach/messagebus by role (LLM + tool call), but it&#39;s UI-triggered on-demand, not a persistent LangGraph agent (ADR-0029)</li>
           <li>&bull; Notice Corpus Manager&#39;s own edge into Notice Corpus (confirmed clauses become citable) is not drawn — crosses the whole diagram width for no added value; see agent-specifications.md</li>
+          <li>&bull; Approval Coordinator is peach/messagebus, not gold/cloud (fixes Principal Engineer audit 1.5) — its guarded LLM summarize_feedback() call (ADR-0017) is real tool-calling LLM usage, the same reason Findings Author and Compliance Analyst are peach; it isn&#39;t a pure deterministic state tracker</li>
         </ul>
       </div>
 
@@ -5726,6 +5730,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>&bull; Supervision-question list, findings/severity, and pre-AG submission require Lead/Approver sign-off</li>
           <li>&bull; AG-requested changes and LFI pre-exit concerns are routine revision loops, not rare edge cases</li>
           <li>&bull; Ungrounded verdicts fall back to human review. Personas/SLAs/observability: deployment diagram</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot slate"></div>
+          <h3>Three platform services not drawn as their own boxes here</h3>
+        </div>
+        <ul>
+          <li>&bull; severity_rubric.lookup(), quant_analysis.compute(), and template_fill() each have a full input/output/timeout/retry contract in tool-contracts.md and are called by Findings Author (and quant_analysis.compute() also by Compliance Analyst for context) — omitted here to avoid three more boxes on an already-dense 12-component diagram</li>
+          <li>&bull; Drawn as their own components with ownership tags in lfi-pipeline-deployment-v1.html instead, the diagram whose whole point is &quot;who owns and runs what&quot; (fixes Principal Engineer audit 1.2)</li>
         </ul>
       </div>
 

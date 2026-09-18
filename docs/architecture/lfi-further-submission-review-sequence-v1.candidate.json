@@ -65,7 +65,8 @@
       "title": "Diagram scope",
       "items": [
         "Covers only the gap between draft and relay/round-2 intake. Sufficiency Check itself (a separate, later gate judging whether round-2 responses actually close the meeting's gaps) is drawn in lfi-workflow-phase2-meeting-v1.html, not repeated here",
-        "SLA duration not yet set for this checkpoint — tune empirically once real cases exist, same treatment as decisions 30/54"
+        "SLA duration not yet set for this checkpoint — tune empirically once real cases exist, same treatment as decisions 30/54",
+        "The manual LFI relay step has no tool-level retry policy to draw (it's a human action outside the app); Intake Tracker's own adapter retry/terminal-failure split is drawn in full in lfi-intake-tab-sequence-v1.html rather than repeated here"
       ]
     }
   ]

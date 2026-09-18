@@ -115,7 +115,8 @@
       "title": "Why the tracks stay separate (ADR-0009/0011)",
       "items": [
         "Drafted, shown, and signed off in visually separate sections, never one merged list — a shared list would visually imply a comparison the two tracks must never make",
-        "\"Both Signed Off\" is a conjunction of two independent completions, not a reconciliation — it never checks that the tracks agree"
+        "\"Both Signed Off\" is a conjunction of two independent completions, not a reconciliation — it never checks that the tracks agree",
+        "This is the single most-repeated rule in the whole decision log: ADR-0009 keeps the EDM's own quantitative data context-only so it never silently overrides a qualitative compliance judgment, and ADR-0011 confirms adding quantitative analysis doesn't reverse that — the two lanes on this diagram are a direct visual consequence of that ADR pair, not an arbitrary layout choice"
       ]
     },
     {

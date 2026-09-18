@@ -60,7 +60,8 @@
       "title": "Diagram scope",
       "items": [
         "No separate version-browser screen is built (decision 110) — the inline list is the only history view",
-        "severity_rubric.lookup()'s omitted-rubric_version default (current published version for that license type) and its use inside Compliance Analyst/Findings Author's guardrails are in agent-specifications.md and tool-contracts.md, not repeated here"
+        "severity_rubric.lookup()'s omitted-rubric_version default (current published version for that license type) and its use inside Compliance Analyst/Findings Author's guardrails are in agent-specifications.md and tool-contracts.md, not repeated here",
+        "No tool-call retry/timeout branch drawn — every call here is a Lead/Approver UI action against a shared platform service with no documented failure mode distinct from an ordinary DB write"
       ]
     }
   ]

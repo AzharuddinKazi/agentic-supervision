@@ -5520,8 +5520,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <ul>
           <li>&bull; current_state.png&#39;s Phase 2 shows an iterative sufficiency loop earlier drafts left unmodeled — this gate makes it a real, human-judged state, not an assumed one-shot extraction</li>
-          <li>&bull; &quot;Insufficient&quot; re-enters Phase 1&#39;s Intake Tracker via the same all_submitted trigger (no literal loop-back edge drawn, to avoid clutter)</li>
-          <li>&bull; Updated (decision 99): &quot;requests → sufficiency&quot; isn&#39;t direct — Lead/Approver review, LFI relay, and round-2 intake happen first; full sequence in lfi-further-submission-review-v1.html</li>
+          <li>&bull; &quot;Insufficient&quot; re-enters Phase 1&#39;s Intake Tracker via Intake Tracker&#39;s round_submitted(round: N+1) event, not all_submitted — that trigger is Gap Analysis&#39;s specifically and must not re-fire on further-submission rounds (fixes audit 2.7; no literal loop-back edge drawn, to avoid clutter)</li>
+          <li>&bull; Updated (decision 99): &quot;requests → sufficiency&quot; isn&#39;t direct — Lead/Approver review, LFI relay, and round-2 intake happen first; full sequence in lfi-further-submission-review-sequence-v1.html</li>
         </ul>
       </div>
 

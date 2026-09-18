@@ -209,10 +209,10 @@
     },
     {
       "id": "ag_preexit",
-      "type": "cloud",
+      "type": "messagebus",
       "label": "Approval Coordinator",
-      "sublabel": "state tracker",
-      "tag": "+ guarded LLM assist",
+      "sublabel": "state + guarded LLM",
+      "tag": "summarize_feedback(), ADR-0017",
       "pos": [
         1014,
         370
@@ -489,7 +489,8 @@
         "Gold/cloud = a deterministic tool or rule-based service — no LLM involved at all; violet/database = a data store",
         "In-Person Deep Dive's minutes feed Meeting Facilitator's post-meeting extraction (edge not drawn — crosses the data-source row; see agent-specifications.md)",
         "Notice Corpus Manager is peach/messagebus by role (LLM + tool call), but it's UI-triggered on-demand, not a persistent LangGraph agent (ADR-0029)",
-        "Notice Corpus Manager's own edge into Notice Corpus (confirmed clauses become citable) is not drawn — crosses the whole diagram width for no added value; see agent-specifications.md"
+        "Notice Corpus Manager's own edge into Notice Corpus (confirmed clauses become citable) is not drawn — crosses the whole diagram width for no added value; see agent-specifications.md",
+        "Approval Coordinator is peach/messagebus, not gold/cloud (fixes Principal Engineer audit 1.5) — its guarded LLM summarize_feedback() call (ADR-0017) is real tool-calling LLM usage, the same reason Findings Author and Compliance Analyst are peach; it isn't a pure deterministic state tracker"
       ]
     },
     {
@@ -499,6 +500,14 @@
         "Supervision-question list, findings/severity, and pre-AG submission require Lead/Approver sign-off",
         "AG-requested changes and LFI pre-exit concerns are routine revision loops, not rare edge cases",
         "Ungrounded verdicts fall back to human review. Personas/SLAs/observability: deployment diagram"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Three platform services not drawn as their own boxes here",
+      "items": [
+        "severity_rubric.lookup(), quant_analysis.compute(), and template_fill() each have a full input/output/timeout/retry contract in tool-contracts.md and are called by Findings Author (and quant_analysis.compute() also by Compliance Analyst for context) — omitted here to avoid three more boxes on an already-dense 12-component diagram",
+        "Drawn as their own components with ownership tags in lfi-pipeline-deployment-v1.html instead, the diagram whose whole point is \"who owns and runs what\" (fixes Principal Engineer audit 1.2)"
       ]
     },
     {

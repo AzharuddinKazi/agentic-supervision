@@ -2,43 +2,235 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "LFI Examination Pipeline — v1 Context",
+    "title": "LFI Examination Pipeline \u2014 v1 Context",
     "quality_profile": "showcase"
   },
   "components": [
-    { "id": "lfi", "type": "external", "label": "LFI", "sublabel": "bank/SVF under examination", "pos": [40, 40], "size": [150, 64] },
-    { "id": "shared_workspace", "type": "external", "label": "Shared Workspace", "sublabel": "delisted → Smart Portal", "pos": [40, 300], "size": [150, 64] },
-    { "id": "notice_source", "type": "external", "label": "Notice/Regulation Source", "sublabel": "published notices & clauses", "pos": [40, 560], "size": [170, 64] },
-    { "id": "pipeline", "type": "backend", "label": "LFI Examination Pipeline", "sublabel": "multi-agent copilot (v1)", "pos": [480, 300], "size": [280, 90] },
-    { "id": "identity_provider", "type": "external", "label": "Enterprise SSO", "sublabel": "Azure AD / on-prem AD", "pos": [480, 40], "size": [170, 64] },
-    { "id": "edm", "type": "external", "label": "EDM", "sublabel": "Oracle fraud data system", "pos": [920, 40], "size": [150, 64] },
-    { "id": "examiner_team", "type": "external", "label": "FPSD Examiner / Lead-Approver", "sublabel": "drafts & approves", "pos": [920, 300], "size": [200, 64] },
-    { "id": "assistant_governor", "type": "external", "label": "Assistant Governor", "sublabel": "AG approval, pre-exit", "pos": [920, 560], "size": [180, 64] }
+    {
+      "id": "lfi",
+      "type": "external",
+      "label": "LFI",
+      "sublabel": "bank/SVF under examination",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "shared_workspace",
+      "type": "external",
+      "label": "Shared Workspace",
+      "sublabel": "delisted \u2192 Smart Portal",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "notice_source",
+      "type": "external",
+      "label": "Notice/Regulation Text",
+      "sublabel": "offline \u2014 no live publish feed",
+      "pos": [
+        40,
+        560
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "auditor",
+      "type": "external",
+      "label": "Auditor / Compliance Reviewer",
+      "sublabel": "portfolio-wide audit read",
+      "pos": [
+        270,
+        700
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "pipeline",
+      "type": "backend",
+      "label": "LFI Examination Pipeline",
+      "sublabel": "multi-agent copilot (v1)",
+      "pos": [
+        480,
+        300
+      ],
+      "size": [
+        280,
+        90
+      ]
+    },
+    {
+      "id": "identity_provider",
+      "type": "external",
+      "label": "Enterprise SSO",
+      "sublabel": "Azure AD / on-prem AD",
+      "pos": [
+        480,
+        40
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "edm",
+      "type": "external",
+      "label": "EDM",
+      "sublabel": "Oracle fraud data system",
+      "pos": [
+        920,
+        40
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "examiner_team",
+      "type": "external",
+      "label": "FPSD Examiner / Lead-Approver",
+      "sublabel": "drafts & approves",
+      "pos": [
+        920,
+        300
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "assistant_governor",
+      "type": "external",
+      "label": "Assistant Governor",
+      "sublabel": "AG approval, pre-exit",
+      "pos": [
+        920,
+        560
+      ],
+      "size": [
+        180,
+        64
+      ]
+    }
   ],
   "connections": [
-    { "id": "lfi-to-workspace", "from": "lfi", "to": "shared_workspace", "label": "submits RFI documents", "variant": "emphasis", "labelDy": 24 },
-    { "id": "workspace-to-pipeline", "from": "shared_workspace", "to": "pipeline", "label": "ingested via SFTP", "variant": "emphasis" },
-    { "id": "notice-to-pipeline", "from": "notice_source", "to": "pipeline", "label": "publishes notices/clauses", "variant": "default" },
-    { "id": "sso-to-pipeline", "from": "identity_provider", "to": "pipeline", "label": "authenticates users", "variant": "security", "fromSide": "bottom", "toSide": "top" },
-    { "id": "pipeline-to-edm", "from": "pipeline", "to": "edm", "label": "queries fraud data (read-only)", "variant": "default", "fromSide": "top", "toSide": "bottom" },
-    { "id": "examiner-to-pipeline", "from": "examiner_team", "to": "pipeline", "label": "reviews & approves (HITL)", "variant": "emphasis", "fromSide": "left", "toSide": "right", "labelAt": [896, 378] },
-    { "id": "ag-to-pipeline", "from": "assistant_governor", "to": "pipeline", "label": "AG approval outcome", "variant": "default", "fromSide": "left", "toSide": "bottom" }
+    {
+      "id": "lfi-to-workspace",
+      "from": "lfi",
+      "to": "shared_workspace",
+      "label": "submits RFI documents",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "workspace-to-pipeline",
+      "from": "shared_workspace",
+      "to": "pipeline",
+      "label": "ingested via SFTP",
+      "variant": "emphasis"
+    },
+    {
+      "id": "notice-to-pipeline",
+      "from": "notice_source",
+      "to": "pipeline",
+      "label": "sourced offline, uploaded by Lead/Approver",
+      "variant": "dashed"
+    },
+    {
+      "id": "auditor-to-pipeline",
+      "from": "auditor",
+      "to": "pipeline",
+      "label": "reads audit_log[] (portfolio-wide)",
+      "variant": "default",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        400,
+        620
+      ]
+    },
+    {
+      "id": "sso-to-pipeline",
+      "from": "identity_provider",
+      "to": "pipeline",
+      "label": "authenticates users",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "pipeline-to-edm",
+      "from": "pipeline",
+      "to": "edm",
+      "label": "queries fraud data (read-only)",
+      "variant": "default",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "examiner-to-pipeline",
+      "from": "examiner_team",
+      "to": "pipeline",
+      "label": "reviews & approves (HITL)",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "right",
+      "labelAt": [
+        896,
+        378
+      ]
+    },
+    {
+      "id": "ag-to-pipeline",
+      "from": "assistant_governor",
+      "to": "pipeline",
+      "label": "AG approval outcome",
+      "variant": "default",
+      "fromSide": "left",
+      "toSide": "bottom",
+      "labelAt": [
+        850,
+        545
+      ]
+    }
   ],
   "cards": [
     {
       "dot": "cyan",
-      "title": "C4 Context diagram — one level up from lfi-pipeline-v1",
+      "title": "C4 Context diagram \u2014 one level up from lfi-pipeline-v1",
       "items": [
-        "The pipeline as one system, with every external actor and system it touches — the zoomed-out view lfi-pipeline-v1 (a Container-level diagram) doesn't provide on its own",
+        "The pipeline as one system, with every external actor and system it touches \u2014 the zoomed-out view lfi-pipeline-v1 (a Container-level diagram) doesn't provide on its own",
         "Only v1-scope external interfaces are shown (ADR-0002); see lfi-pipeline-v1.html for the internal containers, lfi-pipeline-deployment-v1.html for infra/network detail, and the 3 workflow diagrams for execution order",
-        "Full detail behind each abbreviated relationship: SFTP ingestion (ADR-0006), notice ingestion (ADR-0005), SSO/identity (ADR-0015), EDM read-only querying (ADR-0009/0011), HITL checkpoints — full current list in agent-specifications.md, AG meetings held outside the pipeline (CONTEXT.md)"
+        "Full detail behind each abbreviated relationship: SFTP ingestion (ADR-0006), notice ingestion (ADR-0005), SSO/identity (ADR-0015), EDM read-only querying (ADR-0009/0011), HITL checkpoints \u2014 full current list in agent-specifications.md, AG meetings held outside the pipeline (CONTEXT.md)",
+        "Notice/Regulation Text \u2192 Pipeline is drawn dashed and labeled \"sourced offline, uploaded by Lead/Approver\" (fixes Principal Engineer audit 1.6) \u2014 ADR-0029 established there is no external system that publishes notices to this pipeline; a human uploads a document they already have via Notice Corpus Manager (lfi-notice-corpus-manager-sequence-v1.html has the full call sequence). An earlier version of this edge read \"publishes notices/clauses\", implying a live system-to-system feed that doesn't exist",
+        "Auditor/Compliance Reviewer is now drawn as its own actor (fixes Principal Engineer audit 1.7) \u2014 ADR-0024 gives this role standing portfolio-wide read access to the audit log, the system's most sensitive store; it had no representation at Context zoom before this"
       ]
     },
     {
       "dot": "slate",
       "title": "Notation note",
       "items": [
-        "Colors here use archify's default architecture-layer semantics, not lfi-pipeline-v1's automation-role remap — at Context zoom, everything outside the center box is external by definition, so the automation-role distinction (which agent reasons vs. calls tools vs. is deterministic) isn't the relevant question yet",
+        "Colors here use archify's default architecture-layer semantics, not lfi-pipeline-v1's automation-role remap \u2014 at Context zoom, everything outside the center box is external by definition, so the automation-role distinction (which agent reasons vs. calls tools vs. is deterministic) isn't the relevant question yet",
         "Closest standard: a C4 Context diagram (person/external-system boxes + one system box, no internal detail)"
       ]
     }

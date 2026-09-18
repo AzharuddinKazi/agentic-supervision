@@ -68,7 +68,9 @@
       "title": "Diagram scope",
       "items": [
         "Per-finding severity guardrail (ADR-0017/0020, severity_rubric.lookup()) is drawn in agent-specifications.md's contract, not repeated here",
-        "Transmittal letter and pre-exit deck stay download-only in v1 (decision 102) — no in-app rendering call exists yet"
+        "Transmittal letter and pre-exit deck stay download-only in v1 (decision 102) — no in-app rendering call exists yet",
+        "A redraft (triggered from lfi-ag-feedback-review-sequence-v1.html on AG-feedback confirm) re-enters at qual_draft/quant_draft and must pass both tracks' sign-off again before ag_status can advance — this diagram's message sequence is exactly what that re-signoff replays, not a separate mechanism",
+        "Tool-call retry/timeout isn't drawn for quant_analysis.compute() here — its terminal/transient split matches the pattern already drawn in lfi-guardrail-citation-grounding-v1.html and lfi-intake-tab-sequence-v1.html, not repeated a third time"
       ]
     }
   ]
