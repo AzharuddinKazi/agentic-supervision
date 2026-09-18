@@ -6,7 +6,7 @@ This is the durable, committed record of every question raised and decision made
 
 **Relationship to other docs**:
 - `CONTEXT.md` — canonical vocabulary, kept current, no history.
-- `docs/adr/0001`–`0028` — one decision per file, terse, the thing to cite in code/design reviews.
+- `docs/adr/0001`–`0032` — one decision per file, the thing to cite in code/design reviews. Written in the Michael Nygard ADR format (Title/Status/Context/Decision/Consequences, as of 2026-09-19 — see `README.md`'s "ADR format" note).
 - `.scratch/lfi-examination-pipeline/design-grill.md` — the original raw working log this document is distilled from (gitignored, not part of the shipped repo — this file is now the canonical, committed copy going forward).
 - This file — the full narrative: every question, every round, every decision, in order, cross-referenced to ADRs.
 

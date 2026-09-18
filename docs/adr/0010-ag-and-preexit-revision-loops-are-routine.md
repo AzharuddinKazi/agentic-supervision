@@ -1,5 +1,17 @@
 # AG-approval and pre-exit revision loops are modeled as routine pipeline state, not deferred edge cases
 
+## Status
+
+Accepted — 2026-09-15. Supersedes part of ADR-0002.
+
+## Context
+
 ADR-0002 originally treated Assistant Governor approval as a flat status field (`drafted → awaiting approval → approved`) and the post-pre-exit "exit deck" revision as a rare edge case deferred to a later version, on the assumption that revisions were exceptional. A flowchart of the actual current-state process (`docs/reference-docs/current_state.png`) showed both are normal, expected loops: the AG routinely requests changes before approving (`Showcase to AG → Changes? → back to Apply Comments → re-showcase`), and the LFI routinely raises concerns at the pre-exit meeting, triggering a letter/deck update before proceeding to the exit meeting.
 
-We're superseding that part of ADR-0002: v1 models both as real state the pipeline tracks — a revision can route the transmittal letter/deck back to drafting from either checkpoint, and the audit trail (ADR-0007) records each round. This is worth recording because it directly contradicts what was previously decided, and because building the flat-status version first would have meant reworking the state model almost immediately after real usage — cheaper to build the loop correctly now that we know it's routine.
+## Decision
+
+We're superseding that part of ADR-0002: v1 models both as real state the pipeline tracks — a revision can route the transmittal letter/deck back to drafting from either checkpoint, and the audit trail (ADR-0007) records each round.
+
+## Consequences
+
+This is worth recording because it directly contradicts what was previously decided, and because building the flat-status version first would have meant reworking the state model almost immediately after real usage — cheaper to build the loop correctly now that we know it's routine. (These loops were not actually drawn as real LangGraph state until Round 20's Principal Engineer audit caught the gap — see the fix recorded in `docs/decision-log.md` decision 123.)

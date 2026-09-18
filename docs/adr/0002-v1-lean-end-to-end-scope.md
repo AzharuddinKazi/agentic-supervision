@@ -1,8 +1,16 @@
 # v1 covers all three examination phases, lean, rather than one phase in depth
 
-We initially scoped v1 to pre-examination intake tracking and gap analysis only (highest tedium/error today), with the examination-meeting and post-examination phases designed at a lighter level of detail but not built. This was reversed: v1 now spans **all three phases end-to-end** (pre-examination, examination meeting, post-examination — including transmittal letter and pre-exit deck drafting), but each phase gets only its bare-minimum slice rather than full depth.
+## Status
 
-This is worth recording because it's the opposite of the "narrow but deep" default a reader would expect from the phase-1 framing still visible in early design notes, and because it cascades: features that were deferred under the narrow scope (e.g. the severity/deadline rubric's editable UI) came back into v1 scope once the phase that consumes them was back in.
+Accepted — 2026-09-15. Partially superseded by ADR-0010 (the AG-approval/pre-exit revision-loop framing under "Post-examination" below no longer holds; see that ADR).
+
+## Context
+
+We initially scoped v1 to pre-examination intake tracking and gap analysis only (highest tedium/error today), with the examination-meeting and post-examination phases designed at a lighter level of detail but not built.
+
+## Decision
+
+This was reversed: v1 now spans **all three phases end-to-end** (pre-examination, examination meeting, post-examination — including transmittal letter and pre-exit deck drafting), but each phase gets only its bare-minimum slice rather than full depth.
 
 Concretely, "bare minimum" per phase means:
 - **Pre-examination**: intake tracking (presence/format only, no content validation) + notice/clause compliance gap analysis (no EDM cross-checking).
@@ -10,3 +18,7 @@ Concretely, "bare minimum" per phase means:
 - **Post-examination**: findings/severity human sign-off, then transmittal letter drafted from a fixed template; pre-exit deck is a derived artifact off the same finding data, not independently authored. **Updated by ADR-0010**: the AG-approval and pre-exit revision loops are modeled as real pipeline state in v1, not a flat status field or a deferred edge case — see ADR-0010.
 
 License-type scope is separately narrowed to banks only for v1 (SVFs and others deferred to v2+), independent of this phase-scope decision.
+
+## Consequences
+
+This is worth recording because it's the opposite of the "narrow but deep" default a reader would expect from the phase-1 framing still visible in early design notes, and because it cascades: features that were deferred under the narrow scope (e.g. the severity/deadline rubric's editable UI) came back into v1 scope once the phase that consumes them was back in.

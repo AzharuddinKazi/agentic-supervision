@@ -1,10 +1,19 @@
 # LangGraph state schema gets an explicit version field and a migration requirement
 
+## Status
+
+Accepted — 2026-09-16
+
+## Context
+
 An independent architecture review (`.scratch/architecture-review-2026-09-15.md`, Medium Finding #12) noted that the shared LangGraph state object (`agent-specifications.md`'s "Shared graph state" table) has no schema versioning strategy. That's a real gap, not a hypothetical one: an examination's state is checkpointed for the 30-day RFI window plus indefinite AG/pre-exit revision loops (ADR-0010), so a pipeline redeploy is near-certain to happen while examinations are still mid-flight under an older schema shape.
 
-**Decision:**
+## Decision
+
 1. The state object carries its own `schema_version` (integer), incremented on any breaking change to the state shape. This is distinct from a diagram file's unrelated `schema_version` meta field — the two are not the same value and must not be conflated.
 2. Any breaking change to the state schema (field rename, type change, new required field) ships with a migration function that upgrades a persisted checkpoint from the prior `schema_version` to the new one. A migration is required before the new schema version can be deployed — not optional cleanup done after the fact.
 3. Before a deploy carrying a schema change ships, the migration function is tested against at least one representative in-flight checkpoint (a real or realistic mid-examination state, not just an empty/fresh one), so resume-after-crash and resume-after-deploy are exercised together rather than assumed compatible.
 
-**Why this matters:** this is a known durable-workflow pitfall, not exotic to this project — a field rename deployed while examinations are mid-flight breaks resume for every one of those examinations unless there's an explicit migration path, and discovering that mid-incident (a Lead/Approver's `interrupt()` resolution failing to resume weeks into a 30-day window) is a materially worse time to discover it than at deploy time. Versioning the field now costs one integer and one convention; retrofitting it once several schema shapes are already live in production checkpoints is significantly more expensive.
+## Consequences
+
+This is a known durable-workflow pitfall, not exotic to this project — a field rename deployed while examinations are mid-flight breaks resume for every one of those examinations unless there's an explicit migration path, and discovering that mid-incident (a Lead/Approver's `interrupt()` resolution failing to resume weeks into a 30-day window) is a materially worse time to discover it than at deploy time. Versioning the field now costs one integer and one convention; retrofitting it once several schema shapes are already live in production checkpoints is significantly more expensive. (The state table itself was still missing several examination-record fields until Round 20's Principal Engineer audit fix — `docs/decision-log.md` decision 125 — this ADR's versioning requirement applies to that fix too.)

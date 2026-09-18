@@ -1,11 +1,25 @@
 # Observability, evaluation, and audit consumption stack
 
-The pipeline needed a real answer to four questions a production LLM system can't skip: how do we see it's working (observability), how do we know its judgments are still good (evaluation), how do humans stay meaningfully in the loop rather than rubber-stamping (HITL telemetry), and how does the append-only audit trail (decision 36, ADR-0007) actually get reviewed (audit consumption). We picked a standard, self-hostable stack rather than building bespoke tooling or reaching for a SaaS product incompatible with the on-prem/sensitive-data constraints (ADR-0002 decision 2, ADR-0013, ADR-0015).
+## Status
+
+Accepted — 2026-09-15
+
+## Context
+
+The pipeline needed a real answer to four questions a production LLM system can't skip: how do we see it's working (observability), how do we know its judgments are still good (evaluation), how do humans stay meaningfully in the loop rather than rubber-stamping (HITL telemetry), and how does the append-only audit trail (decision 36, ADR-0007) actually get reviewed (audit consumption).
+
+## Decision
+
+We picked a standard, self-hostable stack rather than building bespoke tooling or reaching for a SaaS product incompatible with the on-prem/sensitive-data constraints (ADR-0002 decision 2, ADR-0013, ADR-0015).
 
 **Infra observability — OpenTelemetry + Prometheus/Grafana/Loki/Tempo (the "LGTM" stack).** Every agent and service emits OTel traces/metrics/logs. This is the de facto open-source standard (CNCF), fully self-hostable on-prem, and avoids locking the pipeline's operability to one vendor. Metrics follow the **RED method** (Rate, Errors, Duration) for each service and the **USE method** (Utilization, Saturation, Errors) for the GPU-backed LLM Inference Service — both are standard SRE framings, not bespoke to this project.
 
 **LLM-specific tracing and evaluation — self-hosted Langfuse.** General infra observability doesn't capture what actually matters for an LLM agent: the prompt, the completion, token usage, cost, and whether the output was *correct*. Langfuse (open-source, self-hostable) captures every agent call linked to its OTel trace ID, and doubles as the evaluation platform — both automated scores (e.g., a citation-verifier that checks a cited clause ID actually exists and matches, per ADR-0004) and human-annotated scores (spot-checked agreement/disagreement) attach to the same trace. This avoids running two disconnected systems for tracing and evaluation.
 
-**The primary trust metric is human-agreement rate, not accuracy.** For a co-pilot system (decision 1), the number that matters most is how often a Lead/Approver accepts an agent's draft unedited at each HITL checkpoint. This cuts both ways: a falling agreement rate is a quality regression; a rate near 100% is a distinct risk — automation bias, where humans stop meaningfully reviewing — and should trigger a process check, not be read as a win. Every HITL checkpoint (Gap Analysis flags, supervision-question sign-off, findings/severity sign-off, AG/pre-exit revision loops) must record accept/edit/reject against the trace, not just a boolean interrupt-resolved event.
+**The primary trust metric is human-agreement rate, not accuracy.** For a co-pilot system (decision 1), the number that matters most is how often a Lead/Approver accepts an agent's draft unedited at each HITL checkpoint. Every HITL checkpoint (Gap Analysis flags, supervision-question sign-off, findings/severity sign-off, AG/pre-exit revision loops) must record accept/edit/reject against the trace, not just a boolean interrupt-resolved event.
 
-**Audit consumption stays query-based against the Fraud Database, not a new service.** The audit log (decision 36) already exists in the Fraud Database. Rather than stand up a dedicated audit-reporting component in v1, compliance/audit review happens as read-only queries or scheduled reports against `audit_log`, using whatever BI/reporting tool CBUAE already standardizes on (not yet known — flagged as an open item, same treatment as the deployment platform in ADR-0015). We do add one hardening recommendation worth calling out now because it's much cheaper to build in than retrofit: **hash-chain audit entries** (each entry includes a hash of the previous one) so silent tampering is detectable — standard practice for regulatory-evidence logs.
+**Audit consumption stays query-based against the Fraud Database, not a new service.** The audit log (decision 36) already exists in the Fraud Database. Rather than stand up a dedicated audit-reporting component in v1, compliance/audit review happens as read-only queries or scheduled reports against `audit_log`, using whatever BI/reporting tool CBUAE already standardizes on (not yet known — flagged as an open item, same treatment as the deployment platform in ADR-0015).
+
+## Consequences
+
+A rate near 100% agreement is a distinct risk — automation bias, where humans stop meaningfully reviewing — and should trigger a process check, not be read as a win; a falling rate is a quality regression. We add one hardening recommendation because it's much cheaper to build in than retrofit: **hash-chain audit entries** (each entry includes a hash of the previous one) so silent tampering is detectable — standard practice for regulatory-evidence logs. The audit-log schema and hash-chain construction itself were not fully specified until Round 20's Principal Engineer audit fix (`docs/decision-log.md` decision 124) — this ADR only established the requirement.
