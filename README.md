@@ -23,6 +23,7 @@ CLAUDE.md                       Project instructions for AI coding agents workin
 ## Where to start
 
 - **`docs/PRD.md`** and **`docs/TDD.md`** — start here for a current-state snapshot ("what are we building and why," and "how is it built"). Both consolidate the full decision log into one reorientation point; check `docs/decision-log.md` only for the *why* behind a specific call.
+- **`docs/NEXT_STEPS.md`** — implementation roadmap, Phase 0 prerequisites, sprint build order, and pilot rollout plan.
 - **`CONTEXT.md`** — read this first for vocabulary. It defines every domain term (LFI, RFI, notice/clause, supersession, EDM, finding, transmittal letter, etc.) as used in this project.
 - **`docs/decision-log.md`** — every question raised and decision made, in order (138 decisions across 22 rounds as of 2026-09-18), cross-referenced to ADRs. This is the committed, durable record — check it before reopening anything that looks settled, so a prior decision doesn't get silently re-litigated.
 - **`docs/adr/`** — read the ADRs relevant to the area you're touching before making architectural changes. Each one records a decision, its rationale, and what alternative was rejected and why. `docs/decision-log.md` has a full ADR cross-reference table at the bottom.
