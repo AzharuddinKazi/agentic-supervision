@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LFI Examination Pipeline — Implementation Roadmap &amp; Next Steps</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --fg: #0f172a;
+    --muted: #475569;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --accent: #3b82f6;
+    --accent-hover: #1d4ed8;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --code-bg: #f1f5f9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0f19;
+      --fg: #f1f5f9;
+      --muted: #94a3b8;
+      --card-bg: #131b2e;
+      --border: #1e293b;
+      --accent: #60a5fa;
+      --accent-hover: #93c5fd;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --code-bg: #1e293b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    padding: 24px 16px 80px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header {
+    margin-bottom: 36px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: var(--accent);
+    text-decoration: none;
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  .back-link:hover { text-decoration: underline; }
+  h1 { font-size: 2rem; margin: 0 0 10px; font-weight: 700; letter-spacing: -0.02em; }
+  .subtitle { color: var(--muted); font-size: 1.05rem; margin: 0 0 20px; }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background: var(--code-bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge.status { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
+  .badge.target { background: rgba(59, 130, 246, 0.1); color: var(--accent); border-color: rgba(59, 130, 246, 0.3); }
+  
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  h2 { font-size: 1.35rem; margin-top: 0; margin-bottom: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; margin: 20px 0 10px; font-weight: 600; color: var(--accent); }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 16px; padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .sub-card {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .sub-card h4 { margin: 0 0 8px; font-size: 0.95rem; font-weight: 600; }
+  .sub-card ul { margin: 0; padding-left: 18px; font-size: 0.88rem; }
+  
+  .sprint-block {
+    border-left: 3px solid var(--accent);
+    padding-left: 16px;
+    margin-bottom: 20px;
+  }
+  .sprint-title { font-weight: 600; font-size: 1rem; color: var(--fg); margin-bottom: 4px; }
+  .sprint-desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
+  
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 10px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn.secondary {
+    background: var(--code-bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  .btn.secondary:hover {
+    background: var(--border);
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.88em;
+    padding: 2px 5px;
+    background: var(--code-bg);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  @media print {
+    body { background: #fff; color: #000; padding: 0; }
+    .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    .btn-row, .back-link { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <a href="index.html" class="back-link">&larr; Back to Diagram Gallery</a>
+    <div class="badge-row">
+      <span class="badge status">Design Complete &amp; Audited</span>
+      <span class="badge target">v1 Lean End-to-End</span>
+      <span class="badge">October 2026</span>
+    </div>
+    <h1>Implementation Roadmap &amp; Next Steps</h1>
+    <p class="subtitle">Actionable sequencing for the multi-agent LFI Examination Pipeline for CBUAE Fraud Prevention &amp; Supervision Department (FPSD).</p>
+    <div class="btn-row">
+      <a href="NEXT_STEPS.md" class="btn" download="NEXT_STEPS.md">Download Markdown Document</a>
+      <a href="PRD.md" class="btn secondary">View PRD</a>
+      <a href="TDD.md" class="btn secondary">View TDD</a>
+      <a href="index.html" class="btn secondary">Diagram Gallery</a>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>1. Executive Summary &amp; Current State</h2>
+    <p>The <strong>Agentic Supervision</strong> system augments FPSD examiners across all three phases of an LFI compliance examination without replacing human regulatory authority. All foundational design work is complete:</p>
+    <ul>
+      <li><strong>22 Design Rounds &amp; 138 Numbered Decisions</strong>: Captured in detail in <code>docs/decision-log.md</code>.</li>
+      <li><strong>32 Architecture Decision Records (ADRs)</strong>: Fully converted to the standard Michael Nygard format in <code>docs/adr/</code>.</li>
+      <li><strong>4 Independent Design &amp; Principal Engineer Audits Passed</strong>: All 6 blocking conditions from the 2026-09-17 audit and 13 findings from the 2026-09-18 audit are closed and verified.</li>
+      <li><strong>Production Readiness Baseline</strong>: Living PRD and TDD documents (v1.2.0), comprehensive <code>agent-specifications.md</code>, and explicit <code>tool-contracts.md</code>.</li>
+      <li><strong>Current Code Status</strong>: 100% design and specification artifacts. No application code has been written yet.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>2. Immediate Phase 0: Stakeholder Alignment &amp; Prerequisites</h2>
+    <p>Before kickoff of Sprint 1, the following operational and architectural decisions must be formally closed with CBUAE IT and FPSD:</p>
+    
+    <div class="grid-3">
+      <div class="sub-card">
+        <h4>1. CBUAE IT &amp; Infra</h4>
+        <ul>
+          <li><strong>Container Host</strong>: Confirm bare-metal VMs vs. OpenShift/Kubernetes.</li>
+          <li><strong>Identity</strong>: Confirm Azure AD vs. on-prem Active Directory OIDC/SAML claims.</li>
+          <li><strong>Secrets</strong>: Choose secrets manager (HashiCorp Vault / CyberArk).</li>
+          <li><strong>LLM Host</strong>: Provision GPU test environment (Qwen Coder vs. gpt-oss-120b).</li>
+        </ul>
+      </div>
+
+      <div class="sub-card">
+        <h4>2. FPSD Leadership</h4>
+        <ul>
+          <li><strong>PRD/TDD Approval</strong>: Record formal document sign-off in <code>PRD.md</code> and <code>TDD.md</code>.</li>
+          <li><strong>Language Confirmation</strong>: Sign off on English-only scope for v1 (ADR-0031).</li>
+          <li><strong>Storage Provisioning</strong>: Validate full document content retention in Oracle Fraud DB (ADR-0032).</li>
+          <li><strong>AI Compliance</strong>: Establish model-risk governance sign-off.</li>
+        </ul>
+      </div>
+
+      <div class="sub-card">
+        <h4>3. Examiner Team</h4>
+        <ul>
+          <li><strong>Workload Sizing</strong>: Supply annual bank exam volume and peak concurrency for GPU sizing (ADR-0022).</li>
+          <li><strong>Manual Baseline</strong>: Measure examiner hours spent on manual RFI tracking and review for 2–3 current exams to quantify ROI.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3. Phased Implementation Roadmap (Build Order)</h2>
+    <p>Following <code>docs/TDD.md §8.1</code>, engineering proceeds strictly by architectural dependency:</p>
+
+    <div class="sprint-block">
+      <div class="sprint-title">Sprints 1–2: Foundation Data Stores &amp; Ingestion Layer</div>
+      <div class="sprint-desc">Data layer and ingestion primitives that all downstream agents depend upon.</div>
+      <ul>
+        <li><strong>Oracle Fraud DB Schema</strong>: Tables for Notice Corpus, RFI Store, Audit Trail, and Analysis Output (ADR-0012, ADR-0014). Encrypted BLOB document storage (ADR-0019, ADR-0032).</li>
+        <li><strong>Pluggable Ingestion Adapter</strong>: Build SFTP adapter with <code>list_documents</code>, <code>get_metadata</code>, and <code>fetch_document</code> contracts (ADR-0006).</li>
+        <li><strong>Notice Corpus Service</strong>: PDF ingestion, OCR segmentation, and hybrid lookup (<code>search</code> + exact-match <code>get_clause</code> + single-hop <code>supersession_graph.check</code>, ADR-0027).</li>
+        <li><strong>Tamper-Evident Audit Trail</strong>: Append-only hash-chained logging service (<code>log_checkpoint</code> contract, ADR-0007).</li>
+      </ul>
+    </div>
+
+    <div class="sprint-block">
+      <div class="sprint-title">Sprint 3: Deterministic Intake Tracker (Rule-Based Service)</div>
+      <div class="sprint-desc">Lowest-risk agent component — purely rule-based, no LLM dependency.</div>
+      <ul>
+        <li><strong>RFI Parser</strong>: Ingest pre-sent Excel/Word RFIs into structured questions bank (decision 85).</li>
+        <li><strong>Folder Polling Engine</strong>: Track submissions against fixed bank directory conventions.</li>
+        <li><strong>Event Disambiguation</strong>: Emit <code>all_submitted</code> for Round-1 RFI completion; emit <code>round_submitted(round: N)</code> for further-submission rounds (decision 127).</li>
+      </ul>
+    </div>
+
+    <div class="sprint-block">
+      <div class="sprint-title">Sprints 4–5: Model Client &amp; Compliance Analyst Agent</div>
+      <div class="sprint-desc">The highest-stakes reasoning component, enforcing the central citation guardrail.</div>
+      <ul>
+        <li><strong>In-Tenant Model Client</strong>: Model-agnostic client calling self-hosted LLM via mTLS with structured output repair (ADR-0013, ADR-0019).</li>
+        <li><strong>Citation Grounding Hard Rule</strong>: Non-negotiable exact-match check (ADR-0004). Force <code>insufficient_grounding, needs human review</code> on low confidence or tool errors (ADR-0018).</li>
+        <li><strong>Gap Analysis &amp; Question Drafting</strong>: LangGraph node batch-producing compliance verdicts and initial supervision question drafts.</li>
+      </ul>
+    </div>
+
+    <div class="sprint-block">
+      <div class="sprint-title">Sprints 6–7: Meeting Facilitator &amp; Findings Author</div>
+      <div class="sprint-desc">Phase 2 meeting support and Phase 3 post-exam findings generation.</div>
+      <ul>
+        <li><strong>Meeting Facilitator</strong>: Pre-meeting supervision questions sign-off gate (HITL Checkpoint 2). Post-meeting minutes text parsing to extract <code>further_submission_requests[]</code> (HITL Checkpoint 3). Human sufficiency check gate (HITL Checkpoint 4).</li>
+        <li><strong>Deterministic Platform Tools</strong>: Deterministic EDM ratio calculation via <code>quant_analysis.compute</code> (ADR-0021) and versioned rubric evaluation via <code>severity_rubric.lookup</code> (ADR-0020).</li>
+        <li><strong>Findings Author</strong>: Dual-track drafting (qualitative clause compliance + quantitative EDM context, never reconciled, ADR-0009/0011). Findings sign-off gate (HITL Checkpoint 5). Template fill for Word transmittal letter and PPT deck.</li>
+      </ul>
+    </div>
+
+    <div class="sprint-block">
+      <div class="sprint-title">Sprints 8–9: Approval Coordinator, Dashboard UI &amp; Observability</div>
+      <div class="sprint-desc">Final approval workflows, unified frontend, and telemetry integration.</div>
+      <ul>
+        <li><strong>Approval Coordinator</strong>: Pre-AG sign-off gate (HITL Checkpoint 6, ADR-0003). Side-by-side display of raw AG feedback vs. editable AI summary (HITL Checkpoint 8). Routine redraft loops back to findings drafting (ADR-0010).</li>
+        <li><strong>Examiner Dashboard UI</strong>: Portfolio Home + 7 Tabbed Workspace (Setup, Intake, Gap Analysis, Meeting, Findings, Approval, Audit Log) with RBAC gating and optimistic concurrency etag checking (ADR-0008, ADR-0018, ADR-0029).</li>
+        <li><strong>Observability &amp; Metrics</strong>: OpenTelemetry tracing + Langfuse integration. Automated tracking of human-agreement rates at each checkpoint (ADR-0016).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4. Rollout Strategy &amp; Go/No-Go Gates</h2>
+    <p>Per <code>docs/TDD.md §8.2</code>, the system will not be cut over cold. It follows a 3-tier validation sequence:</p>
+    <ol>
+      <li><strong>Shadow Mode (1–2 Examinations)</strong>: System runs in parallel on real ongoing examinations. Outputs are evaluated offline by senior examiners against human work. No agent outputs surfaced live.</li>
+      <li><strong>Live Pilot (2–3 Examinations)</strong>: System operates live with Lead/Approvers signing off at every checkpoint, with full manual fallback ready at any time.</li>
+      <li><strong>Strict Go/No-Go Production Gate</strong>:
+        <ul>
+          <li><strong>0 Citation Violations (Hard Gate)</strong>: Zero instances of an ungrounded or fabricated clause reaching a signed-off finding (ADR-0004).</li>
+          <li><strong>Healthy Human-Agreement Rate</strong>: Lead/Approver sign-off agreement stays within target band (e.g. 70%–92%), avoiding rubber-stamping / automation bias (ADR-0016).</li>
+          <li><strong>0 Unexplained Audit Violations</strong>: Zero hash-chain integrity alarm failures.</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>5. Quick Reference &amp; Core Links</h2>
+    <p>Everything in this design is backed by committed specifications and interactive diagrams:</p>
+    <ul>
+      <li><strong>Interactive Architecture Gallery</strong>: <a href="index.html">docs/index.html</a> (Live at <a href="https://docs.codegraphlabs.com">docs.codegraphlabs.com</a>)</li>
+      <li><strong>Product Requirements Document</strong>: <a href="PRD.md">docs/PRD.md</a> (v1.2.0)</li>
+      <li><strong>Technical Design Document</strong>: <a href="TDD.md">docs/TDD.md</a> (v1.2.0)</li>
+      <li><strong>Agent Specifications &amp; Checkpoints</strong>: <a href="architecture/agent-specifications.md">docs/architecture/agent-specifications.md</a></li>
+      <li><strong>Tool Input/Output Contracts</strong>: <a href="architecture/tool-contracts.md">docs/architecture/tool-contracts.md</a></li>
+      <li><strong>Full 22-Round Decision Log</strong>: <a href="decision-log.md">docs/decision-log.md</a> (138 decisions)</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>
