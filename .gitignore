@@ -30,3 +30,4 @@ npm-debug.log*
 # Temp / build output
 *.tmp
 .cache/
+*.visual-check.*

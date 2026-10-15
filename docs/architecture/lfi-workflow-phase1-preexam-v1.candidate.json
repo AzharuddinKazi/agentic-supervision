@@ -102,6 +102,7 @@
       "type": "backend",
       "label": "Draft Supervision Qs",
       "sublabel": "+ gaps/strengths",
+      "tag": "→ Meeting Facilitator",
       "width": 132
     },
     {
@@ -130,6 +131,7 @@
       "type": "backend",
       "label": "Supervision Qs Ready",
       "sublabel": "→ Phase 2",
+      "tag": "Meeting Facilitator's interrupt()",
       "width": 132
     }
   ],
@@ -196,6 +198,13 @@
       "title": "Tool calls (not drawn — see agent-specifications.md)",
       "items": [
         "Compliance Analyst calls notice_corpus.get_clause(), edm.query(), and supersession_graph.check() inside this node — full tool contracts, retry policy, and timeout values live in agent-specifications.md / ADR-0018, not duplicated here"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Agent handoff at the phase seam (fixes Principal Engineer audit 2.4)",
+      "items": [
+        "This lane is Compliance Analyst's subgraph only. \"Draft Supervision Qs\" is Compliance Analyst's own Phase-1 output; the finalize step and its required sign-off interrupt() belong to Meeting Facilitator (agent-specifications.md responsibility (a)), not Compliance Analyst — drawn explicitly in lfi-supervision-signoff-v1.html, not repeated here"
       ]
     },
     {
